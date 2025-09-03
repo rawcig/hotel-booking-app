@@ -1,42 +1,42 @@
 {
   "expo": {
-    "name": "bookingApp",
+    "name": "Hotel Booking",
     "slug": "bookingApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/SETEC-Logo.png",
     "scheme": "bookingapp",
     "userInterfaceStyle": "automatic",
+    "splash": {
+        "image": "./assets/icons/SETEC-Logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#dedede",
+        "textColor": "#000000"
+      },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+     
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icons/SETEC-Logo.png",
+        "backgroundColor": "#dedede"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/icons/SETEC-Logo.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
+  
     "experiments": {
       "typedRoutes": true
     }
+   
   }
 }
