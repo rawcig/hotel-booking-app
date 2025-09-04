@@ -1,13 +1,105 @@
-import { Booking, bookings } from '@/constants/data';
+import { Booking, bookings as staticBookings } from '@/constants/data';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const MyBooking = () => {
   const [selectedTab, setSelectedTab] = useState('current');
-  
-  const currentBookings = bookings.filter(booking => booking.status === 'confirmed' || booking.status === 'pending');
-  const pastBookings = bookings.filter(booking => booking.status === 'completed' || booking.status === 'cancelled');
+  const [bookings, setBookings] = useState<Booking[]>(staticBookings);
+  const [loading, setLoading] = useState(false);
+
+  // Load bookings from AsyncStorage
+  const loadBookings = async () => {
+    try {
+      setLoading(true);
+      const savedBookings = await AsyncStorage.getItem('bookings');
+      if (savedBookings) {
+        const parsedBookings = JSON.parse(savedBookings);
+        setBookings(parsedBookings);
+      }
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh bookings when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadBookings();
+    }, [])
+  );
+
+  const currentBookings = bookings.filter(booking => 
+    booking.status === 'confirmed' || booking.status === 'pending'
+  );
+  const pastBookings = bookings.filter(booking => 
+    booking.status === 'completed' || booking.status === 'cancelled'
+  );
+
+  // Handle view details
+  const viewBookingDetails = (booking: Booking) => {
+    Alert.alert(
+      `${booking.hotelName}`,
+      `Guest: ${booking.guestName || 'N/A'}
+Email: ${booking.guestEmail || 'N/A'}
+Phone: ${booking.guestPhone || 'N/A'}
+Location: ${booking.location}
+Check-in: ${booking.checkIn}
+Check-out: ${booking.checkOut}
+Guests: ${booking.guests}
+Rooms: ${booking.rooms}
+Total: $${booking.totalPrice}
+Status: ${booking.status.toUpperCase()}
+Booked on: ${booking.bookingDate}`,
+      [
+        {
+          text: 'Cancel Booking',
+          style: 'destructive',
+          onPress: () => cancelBooking(booking.id)
+        },
+        {
+          text: 'Close',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  // Cancel booking function
+  const cancelBooking = async (bookingId: number) => {
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking?',
+      [
+        {
+          text: 'No',
+          style: 'cancel'
+        },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const updatedBookings = bookings.map(booking =>
+                booking.id === bookingId
+                  ? { ...booking, status: 'cancelled' }
+                  : booking
+              );
+              setBookings(updatedBookings);
+              await AsyncStorage.setItem('bookings', JSON.stringify(updatedBookings));
+              Alert.alert('Success', 'Booking has been cancelled');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel booking');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const renderBookingCard = (booking: Booking) => (
     <View key={booking.id} className="bg-white rounded-2xl border-2 border-gray-200 mb-4 overflow-hidden">
@@ -44,7 +136,7 @@ const MyBooking = () => {
               {booking.checkIn} - {booking.checkOut}
             </Text>
             <Text className="text-gray-600 text-sm">
-              {booking.guests} guests • {booking.rooms} room
+              {booking.guests} guest{booking.guests > 1 ? 's' : ''} • {booking.rooms} room{booking.rooms > 1 ? 's' : ''}
             </Text>
           </View>
           
@@ -52,7 +144,10 @@ const MyBooking = () => {
             <Text className="text-xl font-bold text-blue-600">
               ${booking.totalPrice}
             </Text>
-            <TouchableOpacity className="bg-blue-500 px-4 py-2 rounded-lg">
+            <TouchableOpacity 
+              className="bg-blue-500 px-4 py-2 rounded-lg"
+              onPress={() => viewBookingDetails(booking)}
+            >
               <Text className="text-white font-medium text-sm">View Details</Text>
             </TouchableOpacity>
           </View>
@@ -103,16 +198,30 @@ const MyBooking = () => {
 
           {/* Bookings List */}
           <View className="mb-20">
-            {selectedTab === 'current' 
-              ? currentBookings.map(renderBookingCard)
-              : pastBookings.map(renderBookingCard)
-            }
-            
-            {((selectedTab === 'current' && currentBookings.length === 0) ||
-              (selectedTab === 'past' && pastBookings.length === 0)) && (
+            {loading ? (
               <View className="items-center justify-center py-20">
-                <Text className="text-gray-500 text-lg">No bookings found</Text>
+                <Text className="text-gray-500 text-lg">Loading bookings...</Text>
               </View>
+            ) : (
+              <>
+                {selectedTab === 'current' 
+                  ? currentBookings.map(renderBookingCard)
+                  : pastBookings.map(renderBookingCard)
+                }
+                
+                {((selectedTab === 'current' && currentBookings.length === 0) ||
+                  (selectedTab === 'past' && pastBookings.length === 0)) && (
+                  <View className="items-center justify-center py-20">
+                    <Text className="text-gray-500 text-lg">No bookings found</Text>
+                    <Text className="text-gray-400 text-center mt-2">
+                      {selectedTab === 'current' 
+                        ? 'Book a hotel to see your reservations here'
+                        : 'Your completed bookings will appear here'
+                      }
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
         </ScrollView>

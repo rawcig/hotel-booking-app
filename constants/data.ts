@@ -1,3 +1,5 @@
+// constants/data.ts - Updated with guest information fields
+
 export const hotels = [
   { 
     name: 'Grand Palace Hotel', 
@@ -23,6 +25,23 @@ export const hotels = [
     price: '95',
     image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400'
   },
+  // Add more hotels for better category filtering
+  { 
+    name: 'City Center Inn', 
+    location: 'Central District', 
+    distance: '1.5 km away', 
+    rating: '4.3', 
+    price: '75',
+    image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400'
+  },
+  { 
+    name: 'Luxury Sky Hotel', 
+    location: 'Business District', 
+    distance: '3.2 km away', 
+    rating: '4.7', 
+    price: '180',
+    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400'
+  }
 ];
 
 export const bookings = [
@@ -37,7 +56,10 @@ export const bookings = [
     rooms: 1,
     totalPrice: '360',
     status: 'confirmed', // confirmed, pending, completed, cancelled
-    bookingDate: '2025-09-01'
+    bookingDate: '2025-09-01',
+    guestName: 'John Daro',
+    guestEmail: 'john.daro@email.com',
+    guestPhone: '+1234567890'
   },
   {
     id: 2,
@@ -50,9 +72,13 @@ export const bookings = [
     rooms: 1,
     totalPrice: '178',
     status: 'completed',
-    bookingDate: '2025-07-25'
+    bookingDate: '2025-07-25',
+    guestName: 'John Daro',
+    guestEmail: 'john.daro@email.com',
+    guestPhone: '+1234567890'
   }
 ];
+
 export interface Booking {
   id: number;
   hotelName: string;
@@ -65,6 +91,9 @@ export interface Booking {
   totalPrice: string;
   status: string;
   bookingDate: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
 }
 
 export const messages = [
@@ -96,4 +125,3 @@ export const messages = [
     type: 'hotel'
   }
 ];
-// export const categories = ['Popular', 'Recommended', 'Nearby', 'Latest'];
