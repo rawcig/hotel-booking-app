@@ -36,13 +36,12 @@ export default function BookingForm() {
     return Number(hotel.price) * nights * Number(rooms);
   };
 
-  // Format date for display
+  // Compact date format - fixed text overflow
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      weekday: 'short'
+      year: 'numeric'
     });
   };
 
@@ -67,6 +66,14 @@ export default function BookingForm() {
     if (selectedDate && selectedDate > checkInDate) {
       setCheckOutDate(selectedDate);
     }
+  };
+
+  // Quick date selection
+  const setQuickDate = (nights: number) => {
+    const newCheckIn = new Date();
+    const newCheckOut = new Date(newCheckIn.getTime() + nights * 24 * 60 * 60 * 1000);
+    setCheckInDate(newCheckIn);
+    setCheckOutDate(newCheckOut);
   };
 
   // Save booking function
@@ -129,6 +136,7 @@ export default function BookingForm() {
         ]
       );
     } catch (error) {
+      console.error('Booking save error:', error);
       Alert.alert('Error', 'Failed to save booking. Please try again.');
     }
   };
@@ -139,29 +147,39 @@ export default function BookingForm() {
     onClose, 
     date, 
     onChange, 
-    minimumDate 
+    minimumDate,
+    title = "Select Date"
   }: {
     visible: boolean;
     onClose: () => void;
     date: Date;
     onChange: (event: any, selectedDate?: Date) => void;
     minimumDate?: Date;
+    title?: string;
   }) => (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center items-center bg-black/50">
-        <View className="bg-white rounded-2xl mx-4 w-80 shadow-lg">
-          <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+      <TouchableOpacity 
+        activeOpacity={1} 
+        onPress={onClose}
+        className="flex-1 justify-center items-center bg-black/50"
+      >
+        <TouchableOpacity 
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+          className="bg-white rounded-2xl mx-4 shadow-2xl w-180"
+        >
+          <View className="flex-row justify-between items-center px-5 py-4 border-b border-gray-100">
             <TouchableOpacity onPress={onClose}>
-              <Text className="text-blue-500 text-lg font-medium">Cancel</Text>
+              <Text className="text-red-500 text-base font-medium">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">Select Date</Text>
+            <Text className="text-lg font-semibold text-gray-800">{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text className="text-blue-500 text-lg font-medium">Done</Text>
+              <Text className="text-blue-500 text-base font-medium">Done</Text>
             </TouchableOpacity>
           </View>
           <View className="p-4">
@@ -174,8 +192,8 @@ export default function BookingForm() {
               style={{ height: 180, width: '100%' }}
             />
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 
@@ -239,40 +257,97 @@ export default function BookingForm() {
             </View>
           </View>
 
-          {/* Booking Details */}
+          {/* Improved Booking Details */}
           <View className="mb-6">
             <Text className="text-lg font-bold text-gray-800 mb-4">Booking Details</Text>
             
-            {/* Check-in Date */}
-            <View className="mb-4">
-              <Text className="text-gray-700 mb-2">Check-in Date</Text>
-              <TouchableOpacity
-                onPress={() => setShowCheckInPicker(true)}
-                className="bg-gray-100 rounded-xl p-4 flex-row justify-between items-center"
-              >
-                <Text className="text-gray-800 text-base flex-1" numberOfLines={1}>
-                  {formatDate(checkInDate)}
-                </Text>
-                <Text className="text-gray-400 ml-2">📅</Text>
-              </TouchableOpacity>
+            {/* Date Container */}
+            <View className="bg-gray-50 rounded-xl p-4 mb-4">
+              {/* Check-in Date */}
+              <View className="mb-3">
+                <Text className="text-sm font-medium text-gray-600 mb-2">Check-in</Text>
+                <TouchableOpacity
+                  onPress={() => setShowCheckInPicker(true)}
+                  className="bg-white rounded-lg px-4 py-3 flex-row items-center justify-between border border-gray-200"
+                >
+                  <View className="flex-1">
+                    <Text className="text-gray-800 text-base font-medium">
+                      {formatDate(checkInDate)}
+                    </Text>
+                    <Text className="text-xs text-gray-500 mt-0.5">
+                      {checkInDate.toLocaleDateString('en-US', { weekday: 'long' })}
+                    </Text>
+                  </View>
+                  <Text className="text-blue-500 text-lg ml-2">📅</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Night separator */}
+              <View className="flex-row items-center justify-center mb-3">
+                <View className="flex-1 h-px bg-gray-300" />
+                <View className="px-3 py-1 bg-blue-100 rounded-full mx-2">
+                  <Text className="text-blue-600 text-xs font-medium">
+                    {calculateNights()} night{calculateNights() > 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <View className="flex-1 h-px bg-gray-300" />
+              </View>
+
+              {/* Check-out Date */}
+              <View>
+                <Text className="text-sm font-medium text-gray-600 mb-2">Check-out</Text>
+                <TouchableOpacity
+                  onPress={() => setShowCheckOutPicker(true)}
+                  className="bg-white rounded-lg px-4 py-3 flex-row items-center justify-between border border-gray-200"
+                >
+                  <View className="flex-1">
+                    <Text className="text-gray-800 text-base font-medium">
+                      {formatDate(checkOutDate)}
+                    </Text>
+                    <Text className="text-xs text-gray-500 mt-0.5">
+                      {checkOutDate.toLocaleDateString('en-US', { weekday: 'long' })}
+                    </Text>
+                  </View>
+                  <Text className="text-blue-500 text-lg ml-2">📅</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-           {/* Check-out Date */}
+            {/* Quick Select */}
             <View className="mb-4">
-              <Text className="text-gray-700 mb-2">Check-out Date</Text>
-              <TouchableOpacity
-                onPress={() => setShowCheckOutPicker(true)}
-                className="bg-gray-100 rounded-xl p-4 flex-row justify-between items-center"
-              >
-                <Text className="text-gray-800 text-base flex-1" numberOfLines={1}>
-                  {formatDate(checkOutDate)}
-                </Text>
-                <Text className="text-gray-400 ml-2">📅</Text>
-              </TouchableOpacity>
+              <Text className="text-sm font-medium text-gray-600 mb-2">Quick Select</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View className="flex-row">
+                  <TouchableOpacity
+                    onPress={() => setQuickDate(1)}
+                    className="bg-blue-100 px-3 py-2 rounded-full mr-2"
+                  >
+                    <Text className="text-blue-600 text-sm font-medium">Tonight</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setQuickDate(2)}
+                    className="bg-blue-100 px-3 py-2 rounded-full mr-2"
+                  >
+                    <Text className="text-blue-600 text-sm font-medium">Weekend</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setQuickDate(3)}
+                    className="bg-blue-100 px-3 py-2 rounded-full mr-2"
+                  >
+                    <Text className="text-blue-600 text-sm font-medium">3 Days</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setQuickDate(7)}
+                    className="bg-blue-100 px-3 py-2 rounded-full mr-2"
+                  >
+                    <Text className="text-blue-600 text-sm font-medium">1 Week</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
 
             {/* Guests & Rooms */}
-            <View className="flex-row gap-4 mb-6">
+            <View className="flex-row gap-4">
               <View className="flex-1">
                 <Text className="text-gray-700 mb-2">Guests</Text>
                 <TextInput
@@ -323,6 +398,7 @@ export default function BookingForm() {
               date={checkInDate}
               onChange={onCheckInChange}
               minimumDate={new Date()}
+              title="Check-in Date"
             />
             <DatePickerModal
               visible={showCheckOutPicker}
@@ -330,6 +406,7 @@ export default function BookingForm() {
               date={checkOutDate}
               onChange={onCheckOutChange}
               minimumDate={new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000)}
+              title="Check-out Date"
             />
           </>
         ) : (

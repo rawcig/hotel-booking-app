@@ -1,7 +1,3 @@
-// constants/data.ts - Updated with guest information fields
-
-// constants/data.ts - Enhanced hotel data with galleries and details
-
 export interface Hotel {
   name: string;
   location: string;
