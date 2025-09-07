@@ -10,12 +10,10 @@ import save from "@/assets/icons/save.png";
 import search from "@/assets/icons/search.png";
 import star from "@/assets/icons/star.png";
 import user from "@/assets/icons/user.png";
-import home2 from "@/src/img/icon/home.svg";
 // import home3 from "@/assets/icons/home3.png";
 
 export const icons = {
   home,
-  home2,
   search,
   person,
   logo,

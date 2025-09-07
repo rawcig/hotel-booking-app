@@ -1,66 +1,29 @@
-import { hotels } from '@/constants/data';
 import { images } from '@/constants/images';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { RefreshControl, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import HotelCard from '@/components/HotelCard';
+import { useHotels, useSearchHotels } from '@/hooks/useHotels';
 
 export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  // Fetch hotels data
+  const { data: hotelsData, isLoading, refetch } = useHotels({
+    category: selectedCategory,
+    search: searchQuery
+  });
   
   const categories = ['Popular', 'Recommended', 'Nearby', 'Latest'];
-
-  // Enhanced filtering logic with better performance 
-  const filteredHotels = useMemo(() => {
-    let filtered = hotels;
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(hotel => 
-        hotel.name.toLowerCase().includes(query) ||
-        hotel.location.toLowerCase().includes(query) ||
-        hotel.amenities.some(amenity => amenity.toLowerCase().includes(query))
-      );
-    }
-
-    // Apply category filter with enhanced logic
-    switch (selectedCategory) {
-      case 'Popular':
-        filtered = [...filtered].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
-        break;
-      case 'Recommended':
-        filtered = filtered.filter(hotel => parseFloat(hotel.rating) >= 4.5)
-                          .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
-        break;
-      case 'Nearby':
-        filtered = [...filtered].sort((a, b) => {
-          const distanceA = parseFloat(a.distance.replace(' km away', ''));
-          const distanceB = parseFloat(b.distance.replace(' km away', ''));
-          return distanceA - distanceB;
-        });
-        break;
-      case 'Latest':
-        filtered = [...filtered].reverse();
-        break;
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [searchQuery, selectedCategory]);
 
   // Pull to refresh functionality
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
-  }, []);
+    refetch().finally(() => setRefreshing(false));
+  }, [refetch]);
 
   // Clear search function
   const clearSearch = () => {
@@ -72,90 +35,10 @@ export default function App() {
     console.log('Searching for:', searchQuery, 'in category:', selectedCategory);
   };
 
-  // Render hotel card with enhanced design
-  const renderHotelCard = (hotel: any, index: number) => {
-    const originalIndex = hotels.findIndex(h => h.name === hotel.name);
-    const isTopRated = parseFloat(hotel.rating) >= 4.8;
-    const isNearby = parseFloat(hotel.distance.replace(' km away', '')) <= 3;
-    
-    return (
-      <TouchableOpacity 
-        key={originalIndex}
-        className="bg-white rounded-2xl border border-gray-200 mb-4 overflow-hidden shadow-sm"
-        onPress={() => router.push(`/hotels/${originalIndex}`)}
-        activeOpacity={0.95}
-      >
-        <View className="relative">
-          <Image 
-            source={{ uri: hotel.image }} 
-            className="h-48 w-full"
-            resizeMode="cover"
-          />
-          {/* Floating badges */}
-          <View className="absolute top-3 left-3 flex-row">
-            {isTopRated && (
-              <View className="bg-yellow-500 px-2 py-1 rounded-full mr-2">
-                <Text className="text-white text-xs font-bold">⭐ Top Rated</Text>
-              </View>
-            )}
-            {isNearby && (
-              <View className="bg-green-500 px-2 py-1 rounded-full">
-                <Text className="text-white text-xs font-bold">📍 Nearby</Text>
-              </View>
-            )}
-          </View>
-          
-          {/* Rating badge */}
-          <View className="absolute top-3 right-3 bg-black/70 px-3 py-1 rounded-full flex-row items-center">
-            <Text className="text-yellow-400 mr-1">⭐</Text>
-            <Text className="text-white font-medium">{hotel.rating}</Text>
-          </View>
-        </View>
-        
-        <View className="p-4">
-          <View className="flex-row justify-between items-start mb-2">
-            <Text className="text-lg font-bold text-gray-800 flex-1" numberOfLines={1}>
-              {hotel.name}
-            </Text>
-          </View>
-          
-          <Text className="text-gray-500 mb-3" numberOfLines={1}>
-            📍 {hotel.location} • {hotel.distance}
-          </Text>
-          
-          {/* Amenities preview */}
-          <View className="flex-row flex-wrap mb-3">
-            {hotel.amenities.slice(0, 3).map((amenity : any, idx : any) => (
-              <View key={idx} className="bg-blue-50 px-2 py-1 rounded mr-2 mb-1">
-                <Text className="text-blue-600 text-xs">{amenity}</Text>
-              </View>
-            ))}
-            {hotel.amenities.length > 3 && (
-              <View className="bg-gray-100 px-2 py-1 rounded">
-                <Text className="text-gray-600 text-xs">+{hotel.amenities.length - 3} more</Text>
-              </View>
-            )}
-          </View>
-          
-          <View className="flex-row justify-between items-center">
-            <View>
-              <View className="flex-row items-baseline">
-                <Text className="text-2xl font-bold text-blue-600">${hotel.price}</Text>
-                <Text className="text-gray-500 text-sm ml-1">/night</Text>
-              </View>
-            </View>
-            <TouchableOpacity 
-              onPress={() => router.push('/booking/' + originalIndex as any)}
-              className="bg-blue-500 px-6 py-3 rounded-xl shadow-sm"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white font-semibold">Book Now</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  // Use filtered hotels from API or empty array
+  const filteredHotels = useMemo(() => {
+    return hotelsData?.hotels || [];
+  }, [hotelsData]);
 
   return (
     <SafeAreaProvider>
@@ -170,10 +53,10 @@ export default function App() {
           <View className="flex-row justify-between items-center pt-6 mb-6">
             <View className="flex-1">
               <View className="flex-row items-center mb-2">
-                <TouchableOpacity onPress={()=>router.push ('./profile')}>
+                <TouchableOpacity onPress={()=>router.push('/(tabs)/profile')}>
                    <View className="relative mr-4">
                           <Image 
-                            source={images.sreynuch } 
+                            source={images.hak } 
                             className="w-12 h-12 rounded-full"
                             resizeMode="cover"
                           />
@@ -181,7 +64,7 @@ export default function App() {
                         </View>
                 </TouchableOpacity>
                 <View>
-                  <Text className="text-xl font-bold text-gray-800">Chem Sreynuch</Text>
+                  <Text className="text-xl font-bold text-gray-800">iGoBy - Hak</Text>
                   <Text className="text-gray-600 text-sm">Phnom Penh, Cambodia</Text>
                 </View>
               </View>
@@ -291,16 +174,25 @@ export default function App() {
           
           {/* Enhanced Hotels List */}
           <View className="mb-20">
-            {loading ? (
+            {isLoading ? (
               <View className="items-center justify-center py-20">
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text className="text-gray-500 mt-4">Loading amazing hotels...</Text>
+                <Text className="text-gray-500 text-lg">Loading hotels...</Text>
               </View>
             ) : (
               <>
-                {filteredHotels.map((hotel, index) => renderHotelCard(hotel, index))}
+                {filteredHotels.map((hotel:any) => (
+                  <TouchableOpacity
+                    key={hotel.id}
+                    onPress={() => router.push({
+                      pathname: '/hotels/[id]',
+                      params: { id: hotel.id.toString() }
+                    })}
+                  >
+                    <HotelCard hotel={hotel} />
+                  </TouchableOpacity>
+                ))}
                 
-                {filteredHotels.length === 0 && (
+                {filteredHotels.length === 0 && !isLoading && (
                   <View className="items-center py-20 bg-white rounded-2xl">
                     <Text className="text-6xl mb-4">🏨</Text>
                     <Text className="text-gray-500 text-xl font-semibold mb-2">No hotels found</Text>

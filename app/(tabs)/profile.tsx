@@ -7,10 +7,10 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const Profile = () => {
   const [profileData, setProfileData] = useState({
-    name: 'Chem Sreynuch  ',
-    email: 'nuchnuch.takeo@email.com',
+    name: 'Try Leanghak',
+    email: 'hak.goBy@email.com',
     phone: '+855 12 345 678',
-    avatar: images.sreynuch ,
+    avatar: images.hak ,
     memberSince: '2023',
     totalBookings: 12,
     favoriteHotels: 5,
@@ -245,7 +245,7 @@ const Profile = () => {
             <View className="bg-white/95 rounded-2xl p-4 backdrop-blur-sm">
               <View className="flex-row items-center">
                 <Image 
-                  source={ images.sreynuch} 
+                  source={ images.hak} 
                   className="w-20 h-20 rounded-full mr-4 border-2 border-blue-200"
                   resizeMode="cover"
                 />

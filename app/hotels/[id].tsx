@@ -1,4 +1,4 @@
-import { hotels } from '@/constants/data';
+import { Hotel, hotels } from '@/constants/data';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -8,12 +8,14 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function HotelDetail() {
   const { id } = useLocalSearchParams();
-  const hotel = hotels[Number(id)];
+  const hotelId = Array.isArray(id) ? id[0] : id;
+  const hotelIndex = hotelId ? Number(hotelId) : -1;
+  const hotel: Hotel | undefined = hotels[hotelIndex];
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
-  if (!hotel) {
+  if (!hotel || hotelIndex < 0 || hotelIndex >= hotels.length) {
     return (
       <SafeAreaProvider>
         <SafeAreaView className="flex-1 bg-white justify-center items-center">
@@ -248,8 +250,10 @@ export default function HotelDetail() {
             {/* Book Now Button - Your original button enhanced */}
             <TouchableOpacity 
               onPress={() => {
-                const bookingPath = `/booking/${id}`;
-                router.push(bookingPath as any);
+                router.push({
+                  pathname: '/booking/[hotelId]',
+                  params: { hotelId: hotelId }
+                });
               }}
               className="bg-blue-500 py-4 rounded-xl mb-8"
             >
