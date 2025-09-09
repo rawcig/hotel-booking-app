@@ -1,17 +1,19 @@
-import { Booking, Hotel, bookings, hotels } from '@/constants/data';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-
+import { supabase } from '@/lib/supabase';
+import { Hotel } from '@/lib/supabase';
+import { useHotel } from '@/hooks/useHotels';
 
 export default function BookingForm() {
   const { hotelId } = useLocalSearchParams();
-  const hotelIdParam = Array.isArray(hotelId) ? hotelId[0] : hotelId;
-  const hotelIndex = hotelIdParam ? Number(hotelIdParam) : -1;
-  const hotel: Hotel | undefined = hotels[hotelIndex];
+  const hotelIdParam = Array.isArray(hotelId) ? parseInt(hotelId[0]) : parseInt(hotelId as string);
+  
+  // Fetch hotel data from Supabase
+  const { data: hotel, isLoading, error } = useHotel(hotelIdParam);
   
   // Date picker states
   const [checkInDate, setCheckInDate] = useState(new Date());
@@ -37,8 +39,19 @@ export default function BookingForm() {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvc, setCvc] = useState('');
   
-  // Validate hotel
-  if (!hotel || hotelIndex < 0 || hotelIndex >= hotels.length) {
+  // Show loading state
+  if (isLoading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-500">Loading hotel details...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+  
+  // Show error state
+  if (error || !hotel) {
     return (
       <SafeAreaProvider>
         <SafeAreaView className="flex-1 bg-white justify-center items-center">
@@ -120,52 +133,77 @@ export default function BookingForm() {
       Alert.alert('Error', 'Please enter phone number');
       return;
     }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+    
+    // Validate phone format (simple validation)
+    const phoneRegex = /^[0-9+\-\s\(\)]+$/;
+    if (!phoneRegex.test(guestPhone)) {
+      Alert.alert('Error', 'Please enter a valid phone number');
+      return;
+    }
+    
+    // Validate date selection
+    if (checkOutDate <= checkInDate) {
+      Alert.alert('Error', 'Check-out date must be after check-in date');
+      return;
+    }
+    
+    // Validate guests and rooms
+    const guestsNum = parseInt(guests);
+    const roomsNum = parseInt(rooms);
+    
+    if (isNaN(guestsNum) || guestsNum <= 0) {
+      Alert.alert('Error', 'Please enter a valid number of guests');
+      return;
+    }
+    
+    if (isNaN(roomsNum) || roomsNum <= 0) {
+      Alert.alert('Error', 'Please enter a valid number of rooms');
+      return;
+    }
 
     try {
-      // Generate a more reliable unique ID
-      const newBookingId = Date.now() + Math.floor(Math.random() * 10000);
-      
-      // Create new booking
-      const newBooking: Booking = {
-        id: newBookingId,
-        hotelName: hotel.name,
-        location: hotel.location,
-        image: hotel.image,
-        checkIn: formatDate(checkInDate),
-        checkOut: formatDate(checkOutDate),
-        guests: Number(guests),
-        rooms: Number(rooms),
-        totalPrice: calculateTotal().toString(),
+      // Create booking object for Supabase
+      const bookingData = {
+        hotel_id: hotel.id,
+        user_id: 'user-123', // In a real app, this would be the actual user ID
+        check_in: formatDate(checkInDate),
+        check_out: formatDate(checkOutDate),
+        guests: guestsNum,
+        rooms: roomsNum,
+        guest_name: guestName,
+        guest_email: guestEmail,
+        guest_phone: guestPhone,
+        total_price: calculateTotal().toString(),
         status: 'confirmed',
-        bookingDate: new Date().toLocaleDateString(),
-        guestName,
-        guestEmail,
-        guestPhone
+        hotel_name: hotel.name,
+        location: hotel.location,
+        image: hotel.image
       };
 
-      // Get existing bookings from AsyncStorage
-      const existingBookingsJson = await AsyncStorage.getItem('bookings');
-      let existingBookings: Booking[] = [];
-      
-      if (existingBookingsJson) {
-        try {
-          existingBookings = JSON.parse(existingBookingsJson);
-        } catch (parseError) {
-          console.error('Error parsing existing bookings:', parseError);
-          // Fallback to default bookings if parsing fails
-          existingBookings = [...bookings];
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([bookingData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Booking save error:', error);
+        if (error.code === '42501') {
+          Alert.alert('Error', 'Booking failed due to permissions. Please contact support.');
+        } else {
+          Alert.alert('Error', 'Failed to save booking. Please try again.');
         }
-      } else {
-        // If no existing bookings, start with default bookings
-        existingBookings = [...bookings];
+        return;
       }
-      
-      // Add new booking
-      const updatedBookings = [...existingBookings, newBooking];
-      
-      // Save to AsyncStorage
-      await AsyncStorage.setItem('bookings', JSON.stringify(updatedBookings));
-      
+
       Alert.alert(
         'Booking Confirmed!', 
         `Your booking at ${hotel.name} has been confirmed.`,

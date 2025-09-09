@@ -1,21 +1,48 @@
-import { Hotel, hotels } from '@/constants/data';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useHotel } from '@/hooks/useHotels';
+import { Hotel } from '@/lib/supabase';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function HotelDetail() {
   const { id } = useLocalSearchParams();
-  const hotelId = Array.isArray(id) ? id[0] : id;
-  const hotelIndex = hotelId ? Number(hotelId) : -1;
-  const hotel: Hotel | undefined = hotels[hotelIndex];
+  const navigation = useNavigation();
+  const hotelId = Array.isArray(id) ? parseInt(id[0]) : parseInt(id as string);
+  
+  // Fetch hotel data from Supabase
+  const { data: hotel, isLoading, error } = useHotel(hotelId);
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
-  if (!hotel || hotelIndex < 0 || hotelIndex >= hotels.length) {
+  // Set the header title dynamically
+  useEffect(() => {
+    if (hotel) {
+      navigation.setOptions({
+        title: hotel.name
+      });
+    } else if (error) {
+      navigation.setOptions({
+        title: 'Hotel Not Found'
+      });
+    }
+  }, [hotel, error, navigation]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-500">Loading hotel details...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (error || !hotel) {
     return (
       <SafeAreaProvider>
         <SafeAreaView className="flex-1 bg-white justify-center items-center">
@@ -212,7 +239,7 @@ export default function HotelDetail() {
                   </TouchableOpacity>
                 </View>
                 
-                {hotel.reviews.slice(0, 2).map((review) => (
+                {hotel.reviews.slice(0, 2).map((review: any) => (
                   <View key={review.id} className="bg-gray-50 rounded-xl p-4 mb-3">
                     <View className="flex-row items-center mb-2">
                       <Image 
@@ -252,7 +279,7 @@ export default function HotelDetail() {
               onPress={() => {
                 router.push({
                   pathname: '/booking/[hotelId]',
-                  params: { hotelId: hotelId }
+                  params: { hotelId: hotel.id.toString() }
                 });
               }}
               className="bg-blue-500 py-4 rounded-xl mb-8"

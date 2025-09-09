@@ -4,7 +4,7 @@ import React from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-const Messages = () => {
+export default function Messages() {
   const renderMessageItem = (message: any) => (
     <TouchableOpacity 
       key={message.id}
@@ -100,4 +100,4 @@ const Messages = () => {
     </SafeAreaProvider>
   );
 };
-export default Messages;
+// export default Messages;

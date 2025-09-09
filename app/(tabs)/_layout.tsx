@@ -22,7 +22,7 @@ const TabIcon = ({focused, icons, title}: any) => {
   }
 }
 
-const _layout = () => {
+export default function TabsLayout() {
   return (
     <Tabs 
       screenOptions={{
@@ -77,6 +77,7 @@ const _layout = () => {
               />
             </>
           )
+
         }}
         
 
@@ -121,7 +122,3 @@ const _layout = () => {
     </Tabs>
   )
 }
-
-export default _layout
-
-// const styles = StyleSheet.create({})

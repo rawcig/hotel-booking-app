@@ -3,9 +3,12 @@ import { BookingListParams, bookingsService, CreateBookingRequest } from '@/api/
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useBookings = (params: BookingListParams = {}) => {
+  // In a real app, you would get the actual user ID from authentication
+  const userId = 'user-123'; // Placeholder user ID
+  
   return useQuery({
-    queryKey: ['bookings', params],
-    queryFn: () => bookingsService.getBookings(params),
+    queryKey: ['bookings', { ...params, user_id: userId }],
+    queryFn: () => bookingsService.getBookings({ ...params, user_id: userId }),
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
@@ -34,7 +37,10 @@ export const useCancelBooking = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => bookingsService.cancelBooking(id),
+    mutationFn: (id: number) => {
+      console.log('useCancelBooking mutationFn called with ID:', id, 'Type:', typeof id);
+      return bookingsService.cancelBooking(id);
+    },
     onSuccess: () => {
       // Invalidate and refetch bookings
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -44,9 +50,12 @@ export const useCancelBooking = () => {
 };
 
 export const useBookingStats = () => {
+  // In a real app, you would get the actual user ID from authentication
+  const userId = 'user-123'; // Placeholder user ID
+  
   return useQuery({
-    queryKey: ['booking-stats'],
-    queryFn: () => bookingsService.getBookingStats(),
+    queryKey: ['booking-stats', userId],
+    queryFn: () => bookingsService.getBookingStats(userId),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

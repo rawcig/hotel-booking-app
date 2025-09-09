@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { Booking } from '@/constants/data';
+import { Booking } from '@/lib/supabase';
 
 interface BookingCardProps {
   booking: Booking;
@@ -19,7 +19,7 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onViewDetails }) => 
         <View className="flex-1 p-4">
           <View className="flex-row justify-between items-start mb-2">
             <Text className="text-lg font-bold text-gray-800 flex-1"> 
-              {booking.hotelName}
+              {booking.hotel_name}
             </Text>
             <View className={`px-3 py-1 rounded-full ${
               booking.status === 'confirmed' ? 'bg-green-100' :
@@ -40,7 +40,7 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onViewDetails }) => 
           
           <View className="flex-row justify-between items-center mb-2">
             <Text className="text-gray-600 text-sm">
-              {booking.checkIn} - {booking.checkOut}
+              {booking.check_in} - {booking.check_out}
             </Text>
             <Text className="text-gray-600 text-sm">
               {booking.guests} guest{booking.guests > 1 ? 's' : ''} • {booking.rooms} room{booking.rooms > 1 ? 's' : ''}
@@ -49,7 +49,7 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onViewDetails }) => 
           
           <View className="flex-row justify-between items-center">
             <Text className="text-xl font-bold text-blue-600">
-              ${booking.totalPrice}
+              ${booking.total_price}
             </Text>
             <TouchableOpacity 
               className="bg-blue-500 px-4 py-2 rounded-lg"

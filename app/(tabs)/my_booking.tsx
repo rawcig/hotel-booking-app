@@ -1,14 +1,15 @@
+import BookingCard from '@/components/BookingCard';
 import { useBookings, useCancelBooking } from '@/hooks/useBookings';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import BookingCard from '@/components/BookingCard';
 
-const MyBooking = () => {
+export default function MyBooking() {
   const [selectedTab, setSelectedTab] = useState('current');
   const { data: bookingsData, isLoading, refetch } = useBookings();
   const { mutate: cancelBooking } = useCancelBooking();
+  const [refreshing, setRefreshing] = useState(false);
 
   // Refresh bookings when screen is focused
   useFocusEffect(
@@ -16,6 +17,12 @@ const MyBooking = () => {
       refetch();
     }, [refetch])
   );
+
+  // Pull to refresh functionality
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refetch().finally(() => setRefreshing(false));
+  }, [refetch]);
 
   const currentBookings = (bookingsData?.bookings || []).filter(booking => 
     booking.status === 'confirmed' || booking.status === 'pending'
@@ -26,19 +33,21 @@ const MyBooking = () => {
 
   // Handle view details
   const viewBookingDetails = (booking: any) => {
+    console.log('Booking object:', booking);
+    console.log('Booking ID:', booking.id, 'Type:', typeof booking.id);
     Alert.alert(
-      `${booking.hotelName}`,
-      `Guest: ${booking.guestName || 'N/A'}
-Email: ${booking.guestEmail || 'N/A'}
-Phone: ${booking.guestPhone || 'N/A'}
-Location: ${booking.location}
-Check-in: ${booking.checkIn}
-Check-out: ${booking.checkOut}
-Guests: ${booking.guests}
-Rooms: ${booking.rooms}
-Total: $${booking.totalPrice}
-Status: ${booking.status.toUpperCase()}
-Booked on: ${booking.bookingDate}`,
+      `${booking.hotel_name}`,
+      `Guest: ${booking.guest_name || 'N/A'}
+      Email: ${booking.guest_email || 'N/A'}
+      Phone: ${booking.guest_phone || 'N/A'}
+      Location: ${booking.location}
+      Check-in: ${booking.check_in}
+      Check-out: ${booking.check_out}
+      Guests: ${booking.guests}
+      Rooms: ${booking.rooms}
+      Total: ${booking.total_price}
+      Status: ${booking.status.toUpperCase()}
+      Booked on: ${new Date(booking.created_at).toLocaleDateString()}`,
       [
         {
           text: 'Cancel Booking',
@@ -55,6 +64,16 @@ Booked on: ${booking.bookingDate}`,
 
   // Cancel booking function
   const handleCancelBooking = (bookingId: number) => {
+    console.log('Attempting to cancel booking with ID:', bookingId, 'Type:', typeof bookingId);
+    // Ensure we're passing a number
+    const id = typeof bookingId === 'string' ? parseInt(bookingId, 10) : bookingId;
+    
+    if (isNaN(id)) {
+      console.error('Invalid booking ID:', bookingId);
+      Alert.alert('Error', 'Invalid booking ID');
+      return;
+    }
+    
     Alert.alert(
       'Cancel Booking',
       'Are you sure you want to cancel this booking?',
@@ -67,12 +86,13 @@ Booked on: ${booking.bookingDate}`,
           text: 'Yes',
           style: 'destructive',
           onPress: () => {
-            cancelBooking(bookingId, {
+            cancelBooking(id, {
               onSuccess: () => {
                 Alert.alert('Success', 'Booking has been cancelled');
               },
               onError: (error) => {
                 console.error('Error cancelling booking:', error);
+                console.error('Booking ID that failed:', id);
                 Alert.alert('Error', 'Failed to cancel booking');
               }
             });
@@ -85,7 +105,12 @@ Booked on: ${booking.bookingDate}`,
   return (
     <SafeAreaProvider>
       <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1 px-4">
+        <ScrollView 
+          className="flex-1 px-4"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {/* Header */}
           <View className="pt-4 mb-6">
             <Text className="text-2xl font-bold text-gray-800 mb-4">
@@ -166,6 +191,4 @@ Booked on: ${booking.bookingDate}`,
       </SafeAreaView>
     </SafeAreaProvider>
   );
-};
-
-export default MyBooking;
+}

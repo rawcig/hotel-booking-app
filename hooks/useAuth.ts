@@ -1,13 +1,14 @@
 // hooks/useAuth.ts
 import { useState, useEffect } from 'react';
 import { authService, LoginRequest, SignupRequest } from '@/api/services/auth';
-import * as SecureStore from 'expo-secure-store';
+import { supabase } from '@/lib/supabase';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null;
+  role: string;
 }
 
 interface AuthState {
@@ -21,7 +22,7 @@ const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     token: null,
-    isLoading: false,
+    isLoading: true, // Start with loading true
     error: null,
   });
 
@@ -29,31 +30,69 @@ const useAuth = () => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = await SecureStore.getItemAsync('authToken');
-        if (token) {
-          // In a real implementation, you would validate the token
-          // and fetch user data
+        const response = await authService.getCurrentUser();
+        if (response) {
+          setAuthState({
+            user: response.user,
+            token: response.token,
+            isLoading: false,
+            error: null,
+          });
+        } else {
           setAuthState(prev => ({
             ...prev,
-            token,
-            // user: userData // would come from token validation
+            isLoading: false,
           }));
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false,
+        }));
       }
     };
 
     checkAuthStatus();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          // User is logged in
+          setAuthState(prev => ({
+            ...prev,
+            user: {
+              id: session.user.id,
+              name: session.user.email || '', // Will be updated with profile data
+              email: session.user.email || '',
+              phone: null,
+              role: 'user',
+            },
+            token: session.access_token || null,
+            isLoading: false,
+          }));
+        } else {
+          // User is logged out
+          setAuthState({
+            user: null,
+            token: null,
+            isLoading: false,
+            error: null,
+          });
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (credentials: LoginRequest) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       const response = await authService.login(credentials);
-      
-      // Save token securely
-      await SecureStore.setItemAsync('authToken', response.token);
       
       setAuthState({
         user: response.user,
@@ -64,7 +103,7 @@ const useAuth = () => {
       
       return response;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      const errorMessage = error.message || 'Login failed';
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
@@ -79,9 +118,6 @@ const useAuth = () => {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       const response = await authService.signup(userData);
       
-      // Save token securely
-      await SecureStore.setItemAsync('authToken', response.token);
-      
       setAuthState({
         user: response.user,
         token: response.token,
@@ -91,7 +127,7 @@ const useAuth = () => {
       
       return response;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Signup failed';
+      const errorMessage = error.message || 'Signup failed';
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
@@ -104,24 +140,18 @@ const useAuth = () => {
   const logout = async () => {
     try {
       await authService.logout();
-      await SecureStore.deleteItemAsync('authToken');
-      
       setAuthState({
         user: null,
         token: null,
         isLoading: false,
         error: null,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
-      // Still clear local state even if server logout fails
-      await SecureStore.deleteItemAsync('authToken');
-      setAuthState({
-        user: null,
-        token: null,
-        isLoading: false,
-        error: null,
-      });
+      setAuthState(prev => ({
+        ...prev,
+        error: error.message || 'Logout failed',
+      }));
     }
   };
 

@@ -1,6 +1,6 @@
 import { images } from '@/constants/images';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import HotelCard from '@/components/HotelCard';
@@ -32,13 +32,27 @@ export default function App() {
 
   // Handle search with debouncing effect
   const handleSearch = () => {
-    console.log('Searching for:', searchQuery, 'in category:', selectedCategory);
+    if (searchQuery.length > 0) {
+      console.log('Searching for:', searchQuery, 'in category:', selectedCategory);
+      // The search is handled automatically by the useHotels hook when searchQuery changes
+    }
   };
 
   // Use filtered hotels from API or empty array
   const filteredHotels = useMemo(() => {
     return hotelsData?.hotels || [];
   }, [hotelsData]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length > 0) {
+        handleSearch();
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
     <SafeAreaProvider>
@@ -52,7 +66,9 @@ export default function App() {
           {/* Enhanced Header Section */}
           <View className="flex-row justify-between items-center pt-6 mb-6">
             <View className="flex-1">
-              <View className="flex-row items-center mb-2">
+              <Text className="text-2xl font-bold text-gray-800 mb-1">Welcome back!</Text>
+              <Text className="text-gray-600 text-sm mb-3">Ready for your next adventure?</Text>
+              <View className="flex-row items-center">
                 <TouchableOpacity onPress={()=>router.push('/(tabs)/profile')}>
                    <View className="relative mr-4">
                           <Image 
@@ -177,6 +193,11 @@ export default function App() {
             {isLoading ? (
               <View className="items-center justify-center py-20">
                 <Text className="text-gray-500 text-lg">Loading hotels...</Text>
+                <View className="mt-4">
+                  <View className="w-16 h-1 bg-blue-200 rounded-full overflow-hidden">
+                    <View className="w-1/3 h-full bg-blue-500 rounded-full animate-pulse"></View>
+                  </View>
+                </View>
               </View>
             ) : (
               <>

@@ -1,16 +1,16 @@
 import { images } from "@/constants/images";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, Image, Modal, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-const Profile = () => {
+export default function Profile() {
   const [profileData, setProfileData] = useState({
     name: 'Try Leanghak',
     email: 'hak.goBy@email.com',
     phone: '+855 12 345 678',
-    avatar: images.hak ,
+    avatar: images.hak,
     memberSince: '2023',
     totalBookings: 12,
     favoriteHotels: 5,
@@ -33,7 +33,7 @@ const Profile = () => {
 
   // Load settings from storage
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       loadSettings();
     }, [])
   );
@@ -49,7 +49,7 @@ const Profile = () => {
     }
   };
 
-  const saveSettings = async (newSettings: typeof settings) => {
+  const saveSettings = async (newSettings: any) => {
     try {
       await AsyncStorage.setItem('userSettings', JSON.stringify(newSettings));
       setSettings(newSettings);
@@ -59,8 +59,8 @@ const Profile = () => {
     }
   };
 
-  const handleToggleSetting = (key: keyof typeof settings) => {
-    const newSettings = { ...settings, [key]: !settings[key] };
+  const handleToggleSetting = (key: string) => {
+    const newSettings = { ...settings, [key]: !settings[key]  };
     saveSettings(newSettings);
   };
 
@@ -155,7 +155,7 @@ const Profile = () => {
               </Text>
               <Switch
                 value={value}
-                onValueChange={() => handleToggleSetting(key as keyof typeof settings)}
+                onValueChange={() => handleToggleSetting(key)}
                 trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
                 thumbColor={value ? '#FFFFFF' : '#9CA3AF'}
               />
@@ -239,13 +239,13 @@ const Profile = () => {
         <ScrollView className="flex-1">
           {/* Enhanced Header */}
           <View className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-8">
-            <Text className="text-2xl font-bold text-balck mb-6">Profile</Text>
+            <Text className="text-2xl font-bold text-black mb-6">Profile</Text>
 
             {/* User Info Card */}
             <View className="bg-white/95 rounded-2xl p-4 backdrop-blur-sm">
               <View className="flex-row items-center">
                 <Image 
-                  source={ images.hak} 
+                  source={images.hak} 
                   className="w-20 h-20 rounded-full mr-4 border-2 border-blue-200"
                   resizeMode="cover"
                 />
@@ -320,6 +320,4 @@ const Profile = () => {
       </SafeAreaView>
     </SafeAreaProvider>
   );
-};
-
-export default Profile;
+}
