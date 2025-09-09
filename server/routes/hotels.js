@@ -1,65 +1,60 @@
 // routes/hotels.js
 const express = require('express');
 const router = express.Router();
-
-// Import hotel data from the frontend app
-const { hotels } = require('../data/hotels');
+const { supabase } = require('../lib/supabase');
 
 // Get all hotels with pagination and filtering
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, category } = req.query;
     
-    let filteredHotels = [...hotels];
+    // Fetch hotels from Supabase
+    let query = supabase.from('hotels').select('*');
     
     // Apply search filter
     if (search) {
-      const query = search.toLowerCase();
-      filteredHotels = filteredHotels.filter(hotel => 
-        hotel.name.toLowerCase().includes(query) ||
-        hotel.location.toLowerCase().includes(query) ||
-        hotel.amenities.some(amenity => amenity.toLowerCase().includes(query))
-      );
+      const queryTerm = search.toLowerCase();
+      query = query.or(`name.ilike.%${queryTerm}%,location.ilike.%${queryTerm}%`);
     }
     
     // Apply category filter
     if (category) {
       switch (category) {
         case 'Popular':
-          filteredHotels = filteredHotels.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+          query = query.order('rating', { ascending: false });
           break;
         case 'Recommended':
-          filteredHotels = filteredHotels.filter(hotel => parseFloat(hotel.rating) >= 4.5)
-            .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+          query = query.gte('rating', 4.5).order('rating', { ascending: false });
           break;
         case 'Nearby':
-          filteredHotels = filteredHotels.sort((a, b) => {
-            const distanceA = parseFloat(a.distance.replace(' km away', ''));
-            const distanceB = parseFloat(b.distance.replace(' km away', ''));
-            return distanceA - distanceB;
-          });
+          // For nearby, we might need coordinates - for now, just return all
           break;
         case 'Latest':
-          filteredHotels = filteredHotels.reverse();
+          query = query.order('created_at', { ascending: false });
           break;
       }
     }
     
-    // Pagination
+    // Apply pagination
     const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedHotels = filteredHotels.slice(startIndex, endIndex);
+    query = query.range(startIndex, startIndex + parseInt(limit) - 1);
+    
+    const { data, error, count } = await query;
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.json({
       success: true,
-      hotels: paginatedHotels.map((hotel, index) => ({
-        ...hotel,
-        id: startIndex + index
-      })),
+      hotels: data,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(filteredHotels.length / limit),
-        totalCount: filteredHotels.length,
+        totalPages: Math.ceil(count / limit),
+        totalCount: count,
         limit: parseInt(limit)
       }
     });
@@ -72,24 +67,161 @@ router.get('/', (req, res) => {
 });
 
 // Get hotel by ID
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const hotelId = parseInt(req.params.id);
     
-    if (isNaN(hotelId) || hotelId < 0 || hotelId >= hotels.length) {
+    if (isNaN(hotelId)) {
+      return res.status(400).json({ 
+        message: 'Invalid hotel ID' 
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('hotels')
+      .select('*')
+      .eq('id', hotelId)
+      .single();
+    
+    if (error) {
+      console.error('Supabase fetch error:', error);
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message,
+        details: error.details || 'No additional details available'
+      });
+    }
+    
+    if (!data) {
       return res.status(404).json({ 
         message: 'Hotel not found' 
       });
     }
     
-    const hotel = {
-      ...hotels[hotelId],
-      id: hotelId
-    };
+    res.json({
+      success: true,
+      hotel: data
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Create a new hotel
+router.post('/', async (req, res) => {
+  try {
+    const hotelData = req.body;
+    
+    // Validate required fields
+    if (!hotelData.name || !hotelData.location) {
+      return res.status(400).json({ 
+        message: 'Name and location are required' 
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('hotels')
+      .insert([hotelData])
+      .select()
+      .single();
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    res.status(201).json({
+      success: true,
+      hotel: data
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Update a hotel
+router.put('/:id', async (req, res) => {
+  try {
+    const hotelId = parseInt(req.params.id);
+    const hotelData = req.body;
+    
+    if (isNaN(hotelId)) {
+      return res.status(400).json({ 
+        message: 'Invalid hotel ID' 
+      });
+    }
+    
+    // Remove id from update data
+    delete hotelData.id;
+    
+    const { data, error } = await supabase
+      .from('hotels')
+      .update(hotelData)
+      .eq('id', hotelId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase update error:', error);
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message,
+        details: error.details || 'No additional details available'
+      });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ 
+        message: 'Hotel not found' 
+      });
+    }
     
     res.json({
       success: true,
-      hotel
+      hotel: data
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Delete a hotel
+router.delete('/:id', async (req, res) => {
+  try {
+    const hotelId = parseInt(req.params.id);
+    
+    if (isNaN(hotelId)) {
+      return res.status(400).json({ 
+        message: 'Invalid hotel ID' 
+      });
+    }
+    
+    const { error } = await supabase
+      .from('hotels')
+      .delete()
+      .eq('id', hotelId);
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Hotel deleted successfully'
     });
   } catch (error) {
     res.status(500).json({ 
@@ -100,7 +232,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Search hotels
-router.get('/search', (req, res) => {
+router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
     
@@ -110,19 +242,23 @@ router.get('/search', (req, res) => {
       });
     }
     
-    const query = q.toLowerCase();
-    const results = hotels.filter(hotel => 
-      hotel.name.toLowerCase().includes(query) ||
-      hotel.location.toLowerCase().includes(query) ||
-      hotel.amenities.some(amenity => amenity.toLowerCase().includes(query))
-    ).map((hotel, index) => ({
-      ...hotel,
-      id: index
-    }));
+    const queryTerm = q.toLowerCase();
+    
+    const { data, error } = await supabase
+      .from('hotels')
+      .select('*')
+      .or(`name.ilike.%${queryTerm}%,location.ilike.%${queryTerm}%`);
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.json({
       success: true,
-      hotels: results
+      hotels: data
     });
   } catch (error) {
     res.status(500).json({ 
@@ -133,21 +269,26 @@ router.get('/search', (req, res) => {
 });
 
 // Get featured hotels
-router.get('/featured', (req, res) => {
+router.get('/featured', async (req, res) => {
   try {
     // Return top-rated hotels
-    const featuredHotels = hotels
-      .filter(hotel => parseFloat(hotel.rating) >= 4.5)
-      .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
-      .slice(0, 5)
-      .map((hotel, index) => ({
-        ...hotel,
-        id: index
-      }));
+    const { data, error } = await supabase
+      .from('hotels')
+      .select('*')
+      .gte('rating', 4.5)
+      .order('rating', { ascending: false })
+      .limit(5);
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.json({
       success: true,
-      hotels: featuredHotels
+      hotels: data
     });
   } catch (error) {
     res.status(500).json({ 

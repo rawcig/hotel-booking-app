@@ -2,51 +2,62 @@
 const express = require('express');
 const router = express.Router();
 
+// For demo purposes, we'll use a simple authentication system
+// In a real app, you would integrate with Supabase Auth or another auth system
+
 // Mock user data (in a real app, this would come from a database)
 const users = [
   {
     id: 1,
-    name: 'John Daro',
-    email: 'john.daro@email.com',
-    password: '$2a$10$xyz', // This would be a hashed password
-    phone: '+1234567890'
+    name: 'Admin User',
+    email: 'admin@test.com',
+    role: 'admin'
   }
 ];
+
+// Simple token storage (in a real app, use JWT or session management)
+const tokens = new Map();
+
+// Generate a simple token
+function generateToken() {
+  return 'token-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
 
 // Login endpoint
 router.post('/login', (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // In a real app, you would validate credentials against database
-    const user = users.find(u => u.email === email);
+    // For demo purposes, accept any non-empty email and password
+    if (!email || !password) {
+      return res.status(401).json({ 
+        message: 'Email and password are required' 
+      });
+    }
+    
+    // Find user or create a new one for demo
+    let user = users.find(u => u.email === email);
     
     if (!user) {
-      return res.status(401).json({ 
-        message: 'Invalid credentials' 
-      });
+      // Create a new user for demo purposes
+      const userId = users.length + 1;
+      user = {
+        id: userId,
+        name: email.split('@')[0],
+        email: email,
+        role: 'admin'
+      };
+      users.push(user);
     }
     
-    // In a real app, you would verify the password
-    // For now, we'll just check if password is provided
-    if (!password) {
-      return res.status(401).json({ 
-        message: 'Invalid credentials' 
-      });
-    }
-    
-    // Generate a mock JWT token
-    const token = 'mock-jwt-token-' + Date.now();
+    // Generate token
+    const token = generateToken();
+    tokens.set(token, user.id);
     
     res.json({
       success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-      },
-      token
+      user: user,
+      token: token
     });
   } catch (error) {
     res.status(500).json({ 
@@ -59,37 +70,41 @@ router.post('/login', (req, res) => {
 // Signup endpoint
 router.post('/signup', (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password } = req.body;
     
-    // In a real app, you would check if user already exists
-    // and hash the password before saving to database
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Name, email, and password are required' 
+      });
+    }
     
-    // Generate a mock user ID
+    // Check if user already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User already exists' 
+      });
+    }
+    
+    // Create new user
     const userId = users.length + 1;
-    
-    // Add user to mock data (in real app, save to database)
     const newUser = {
       id: userId,
-      name,
-      email,
-      password: '$2a$10$xyz', // This would be a hashed password
-      phone
+      name: name,
+      email: email,
+      role: 'admin'
     };
-    
     users.push(newUser);
     
-    // Generate a mock JWT token
-    const token = 'mock-jwt-token-' + Date.now();
+    // Generate token
+    const token = generateToken();
+    tokens.set(token, newUser.id);
     
     res.status(201).json({
       success: true,
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone
-      },
-      token
+      user: newUser,
+      token: token
     });
   } catch (error) {
     res.status(500).json({ 

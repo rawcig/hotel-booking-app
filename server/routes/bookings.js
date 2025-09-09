@@ -1,67 +1,44 @@
 // routes/bookings.js
 const express = require('express');
 const router = express.Router();
-
-// Mock booking data (in a real app, this would come from a database)
-let bookings = [
-  {
-    id: 1,
-    hotelName: 'Grand Palace Hotel',
-    location: 'Downtown',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
-    checkIn: '2025-09-15',
-    checkOut: '2025-09-18',
-    guests: 2,
-    rooms: 1,
-    totalPrice: '360',
-    status: 'confirmed',
-    bookingDate: '2025-09-01',
-    guestName: 'John Daro',
-    guestEmail: 'john.daro@email.com',
-    guestPhone: '+1234567890'
-  },
-  {
-    id: 2,
-    hotelName: 'Ocean View Resort',
-    location: 'Beachfront',
-    image: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400',
-    checkIn: '2025-08-10',
-    checkOut: '2025-08-12',
-    guests: 1,
-    rooms: 1,
-    totalPrice: '178',
-    status: 'completed',
-    bookingDate: '2025-07-25',
-    guestName: 'John Daro',
-    guestEmail: 'john.daro@email.com',
-    guestPhone: '+1234567890'
-  }
-];
+const { supabase } = require('../lib/supabase');
 
 // Get all bookings for current user
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
     
-    let filteredBookings = [...bookings];
+    // Fetch bookings from Supabase
+    let query = supabase.from('bookings').select('*');
     
     // Apply status filter
     if (status) {
-      filteredBookings = filteredBookings.filter(booking => booking.status === status);
+      query = query.eq('status', status);
     }
     
-    // Pagination
+    // Apply pagination
     const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+    query = query.range(startIndex, startIndex + parseInt(limit) - 1);
+    
+    // Order by creation date
+    query = query.order('created_at', { ascending: false });
+    
+    const { data, error, count } = await query;
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.json({
       success: true,
-      bookings: paginatedBookings,
+      bookings: data,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(filteredBookings.length / limit),
-        totalCount: filteredBookings.length,
+        totalPages: Math.ceil(count / limit),
+        totalCount: count,
         limit: parseInt(limit)
       }
     });
@@ -74,13 +51,30 @@ router.get('/', (req, res) => {
 });
 
 // Get booking by ID
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
     
-    const booking = bookings.find(b => b.id === bookingId);
+    if (isNaN(bookingId)) {
+      return res.status(400).json({ 
+        message: 'Invalid booking ID' 
+      });
+    }
     
-    if (!booking) {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    if (!data) {
       return res.status(404).json({ 
         message: 'Booking not found' 
       });
@@ -88,7 +82,7 @@ router.get('/:id', (req, res) => {
     
     res.json({
       success: true,
-      booking
+      booking: data
     });
   } catch (error) {
     res.status(500).json({ 
@@ -99,60 +93,111 @@ router.get('/:id', (req, res) => {
 });
 
 // Create a new booking
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
-      hotelId,
-      checkIn,
-      checkOut,
+      hotel_id,
+      user_id,
+      check_in,
+      check_out,
       guests,
       rooms,
-      guestName,
-      guestEmail,
-      guestPhone
+      guest_name,
+      guest_email,
+      guest_phone,
+      total_price,
+      hotel_name,
+      location,
+      image
     } = req.body;
     
-    // In a real app, you would fetch hotel details from database
-    // For now, we'll use mock data
-    const hotels = require('../data/hotels').hotels;
-    const hotel = hotels[hotelId];
-    
-    if (!hotel) {
-      return res.status(404).json({ 
-        message: 'Hotel not found' 
+    // Validate required fields
+    if (!hotel_id || !check_in || !check_out || !guests || !rooms || !guest_name || !guest_email || !total_price) {
+      return res.status(400).json({ 
+        message: 'Missing required fields' 
       });
     }
     
-    // Calculate total price (mock implementation)
-    const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 3600 * 24));
-    const totalPrice = parseFloat(hotel.price) * nights * rooms;
-    
-    // Generate new booking ID
-    const newBookingId = bookings.length > 0 ? Math.max(...bookings.map(b => b.id)) + 1 : 1;
-    
-    // Create new booking
     const newBooking = {
-      id: newBookingId,
-      hotelName: hotel.name,
-      location: hotel.location,
-      image: hotel.image,
-      checkIn,
-      checkOut,
+      hotel_id,
+      user_id: user_id || 'anonymous',
+      check_in,
+      check_out,
       guests: parseInt(guests),
       rooms: parseInt(rooms),
-      totalPrice: totalPrice.toString(),
+      guest_name,
+      guest_email,
+      guest_phone: guest_phone || '',
+      total_price: total_price.toString(),
       status: 'confirmed',
-      bookingDate: new Date().toISOString().split('T')[0],
-      guestName,
-      guestEmail,
-      guestPhone
+      hotel_name: hotel_name || '',
+      location: location || '',
+      image: image || ''
     };
     
-    bookings.push(newBooking);
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([newBooking])
+      .select()
+      .single();
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.status(201).json({
       success: true,
-      booking: newBooking
+      booking: data
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Update a booking
+router.put('/:id', async (req, res) => {
+  try {
+    const bookingId = parseInt(req.params.id);
+    const updateData = req.body;
+    
+    if (isNaN(bookingId)) {
+      return res.status(400).json({ 
+        message: 'Invalid booking ID' 
+      });
+    }
+    
+    // Remove id from update data
+    delete updateData.id;
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .update(updateData)
+      .eq('id', bookingId)
+      .select()
+      .single();
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ 
+        message: 'Booking not found' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      booking: data
     });
   } catch (error) {
     res.status(500).json({ 
@@ -163,27 +208,74 @@ router.post('/', (req, res) => {
 });
 
 // Cancel a booking
-router.put('/:id/cancel', (req, res) => {
+router.put('/:id/cancel', async (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
     
-    const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+    if (isNaN(bookingId)) {
+      return res.status(400).json({ 
+        message: 'Invalid booking ID' 
+      });
+    }
     
-    if (bookingIndex === -1) {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    if (!data) {
       return res.status(404).json({ 
         message: 'Booking not found' 
       });
     }
     
-    // Update booking status
-    bookings[bookingIndex] = {
-      ...bookings[bookingIndex],
-      status: 'cancelled'
-    };
+    res.json({
+      success: true,
+      booking: data
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Delete a booking (hard delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const bookingId = parseInt(req.params.id);
+    
+    if (isNaN(bookingId)) {
+      return res.status(400).json({ 
+        message: 'Invalid booking ID' 
+      });
+    }
+    
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', bookingId);
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
     
     res.json({
       success: true,
-      booking: bookings[bookingIndex]
+      message: 'Booking deleted successfully'
     });
   } catch (error) {
     res.status(500).json({ 
@@ -194,18 +286,33 @@ router.put('/:id/cancel', (req, res) => {
 });
 
 // Get booking statistics
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const total = bookings.length;
-    const upcoming = bookings.filter(b => b.status === 'confirmed').length;
-    const completed = bookings.filter(b => b.status === 'completed').length;
-    const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+    // Get count of bookings by status
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('status');
+    
+    if (error) {
+      return res.status(500).json({ 
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    // Calculate statistics
+    const total = data.length;
+    const confirmed = data.filter(b => b.status === 'confirmed').length;
+    const pending = data.filter(b => b.status === 'pending').length;
+    const completed = data.filter(b => b.status === 'completed').length;
+    const cancelled = data.filter(b => b.status === 'cancelled').length;
     
     res.json({
       success: true,
       stats: {
         total,
-        upcoming,
+        confirmed,
+        pending,
         completed,
         cancelled
       }
