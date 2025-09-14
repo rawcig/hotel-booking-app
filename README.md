@@ -77,6 +77,7 @@ constants/          # Static data and assets references
 hooks/              # Custom React hooks
 lib/                # Supabase integration
 providers/          # React Query provider
+server/             # Node.js/Express backend (separate service)
 ```
 
 ## Supabase Integration
@@ -91,6 +92,36 @@ To set up Supabase:
 1. Create a Supabase project
 2. Add your project URL and ANON key to `.env`
 3. Run the database setup script
+
+## Backend Options
+
+This project includes two backend options:
+
+1. **Supabase** (currently active) - Used directly by the React Native app
+2. **Node.js/Express Server** (in `server/` directory) - A REST API server that can be run separately
+
+### Running the Node.js/Express Server
+
+If you want to use the Node.js/Express server instead of Supabase directly:
+
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the server:
+   ```bash
+   npm start
+   ```
+
+4. Update the API service in the React Native app to use the Node.js/Express server endpoints
+
+Note: The Node.js/Express server should be run separately from the React Native app. It cannot be run within the React Native environment because it uses Node.js built-in modules.
 
 ## Future Enhancements
 

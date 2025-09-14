@@ -1,5 +1,5 @@
 // hooks/useRooms.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { roomsService, RoomSearchParams } from '@/api/services/rooms';
 
 export const useAvailableRooms = (params: RoomSearchParams) => {

@@ -3,7 +3,7 @@ import { useBookings, useCancelBooking } from '@/hooks/useBookings';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MyBooking() {
   const [selectedTab, setSelectedTab] = useState('current');
@@ -103,92 +103,90 @@ export default function MyBooking() {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white">
-        <ScrollView 
-          className="flex-1 px-4"
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {/* Header */}
-          <View className="pt-4 mb-6">
-            <Text className="text-2xl font-bold text-gray-800 mb-4">
-              My Bookings
-            </Text>
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView 
+        className="flex-1 px-4"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+        <View className="pt-4 mb-6">
+          <Text className="text-2xl font-bold text-gray-800 mb-4">
+            My Bookings
+          </Text>
+          
+          {/* Tab Buttons */}
+          <View className="flex-row bg-gray-100 rounded-xl p-1">
+            <TouchableOpacity
+              onPress={() => setSelectedTab('current')}
+              className={`flex-1 py-3 rounded-lg ${
+                selectedTab === 'current' ? 'bg-white' : ''
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                selectedTab === 'current' ? 'text-blue-600' : 'text-gray-600'
+              }`}>
+                Current ({currentBookings.length})
+              </Text>
+            </TouchableOpacity>
             
-            {/* Tab Buttons */}
-            <View className="flex-row bg-gray-100 rounded-xl p-1">
-              <TouchableOpacity
-                onPress={() => setSelectedTab('current')}
-                className={`flex-1 py-3 rounded-lg ${
-                  selectedTab === 'current' ? 'bg-white' : ''
-                }`}
-              >
-                <Text className={`text-center font-medium ${
-                  selectedTab === 'current' ? 'text-blue-600' : 'text-gray-600'
-                }`}>
-                  Current ({currentBookings.length})
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={() => setSelectedTab('past')}
-                className={`flex-1 py-3 rounded-lg ${
-                  selectedTab === 'past' ? 'bg-white' : ''
-                }`}
-              >
-                <Text className={`text-center font-medium ${
-                  selectedTab === 'past' ? 'text-blue-600' : 'text-gray-600'
-                }`}>
-                  Past ({pastBookings.length})
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => setSelectedTab('past')}
+              className={`flex-1 py-3 rounded-lg ${
+                selectedTab === 'past' ? 'bg-white' : ''
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                selectedTab === 'past' ? 'text-blue-600' : 'text-gray-600'
+              }`}>
+                Past ({pastBookings.length})
+              </Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          {/* Bookings List */}
-          <View className="mb-20">
-            {isLoading ? (
-              <View className="items-center justify-center py-20">
-                <Text className="text-gray-500 text-lg">Loading bookings...</Text>
-              </View>
-            ) : (
-              <>
-                {selectedTab === 'current' 
-                  ? currentBookings.map(booking => (
-                      <BookingCard 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={viewBookingDetails} 
-                      />
-                    ))
-                  : pastBookings.map(booking => (
-                      <BookingCard 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={viewBookingDetails} 
-                      />
-                    ))
-                }
-                
-                {((selectedTab === 'current' && currentBookings.length === 0) ||
-                  (selectedTab === 'past' && pastBookings.length === 0)) && (
-                  <View className="items-center justify-center py-20">
-                    <Text className="text-gray-500 text-lg">No bookings found</Text>
-                    <Text className="text-gray-400 text-center mt-2">
-                      {selectedTab === 'current' 
-                        ? 'Book a hotel to see your reservations here'
-                        : 'Your completed bookings will appear here'
-                      }
-                    </Text>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+        {/* Bookings List */}
+        <View className="mb-20">
+          {isLoading ? (
+            <View className="items-center justify-center py-20">
+              <Text className="text-gray-500 text-lg">Loading bookings...</Text>
+            </View>
+          ) : (
+            <>
+              {selectedTab === 'current' 
+                ? currentBookings.map(booking => (
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking} 
+                      onViewDetails={viewBookingDetails} 
+                    />
+                  ))
+                : pastBookings.map(booking => (
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking} 
+                      onViewDetails={viewBookingDetails} 
+                    />
+                  ))
+              }
+              
+              {((selectedTab === 'current' && currentBookings.length === 0) ||
+                (selectedTab === 'past' && pastBookings.length === 0)) && (
+                <View className="items-center justify-center py-20">
+                  <Text className="text-gray-500 text-lg">No bookings found</Text>
+                  <Text className="text-gray-400 text-center mt-2">
+                    {selectedTab === 'current' 
+                      ? 'Book a hotel to see your reservations here'
+                      : 'Your completed bookings will appear here'
+                    }
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

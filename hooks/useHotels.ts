@@ -1,7 +1,6 @@
 // hooks/useHotels.ts
-import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { hotelsService, HotelListParams } from '@/api/services/hotels';
-import { Hotel } from '@/lib/supabase';
 
 export const useHotels = (params: HotelListParams = {}) => {
   return useQuery({

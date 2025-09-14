@@ -1,9 +1,9 @@
 import { images } from "@/constants/images";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Alert, Image, Modal, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Profile() {
   const [profileData, setProfileData] = useState({
@@ -31,10 +31,20 @@ export default function Profile() {
     phone: profileData.phone
   });
 
+  // Ref to track if we just saved profile data
+  const justSavedProfile = useRef(false);
+
   // Load settings from storage
   useFocusEffect(
     useCallback(() => {
+      // Don't load if we just saved
+      if (justSavedProfile.current) {
+        justSavedProfile.current = false;
+        return;
+      }
+      
       loadSettings();
+      loadProfile();
     }, [])
   );
 
@@ -49,6 +59,29 @@ export default function Profile() {
     }
   };
 
+  const loadProfile = async () => {
+    // If we just saved, don't reload
+    if (justSavedProfile.current) {
+      justSavedProfile.current = false;
+      return;
+    }
+    
+    try {
+      const savedProfile = await AsyncStorage.getItem('userProfile');
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfileData(parsedProfile);
+        setEditData({
+          name: parsedProfile.name,
+          email: parsedProfile.email,
+          phone: parsedProfile.phone
+        });
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
   const saveSettings = async (newSettings: any) => {
     try {
       await AsyncStorage.setItem('userSettings', JSON.stringify(newSettings));
@@ -59,7 +92,7 @@ export default function Profile() {
     }
   };
 
-  const handleToggleSetting = (key: string) => {
+  const handleToggleSetting = (key: keyof typeof settings) => {
     const newSettings = { ...settings, [key]: !settings[key]  };
     saveSettings(newSettings);
   };
@@ -68,6 +101,7 @@ export default function Profile() {
     try {
       const updatedProfile = { ...profileData, ...editData };
       setProfileData(updatedProfile);
+      justSavedProfile.current = true;
       await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       setShowEditModal(false);
       Alert.alert('Success', 'Profile updated successfully!');
@@ -78,11 +112,19 @@ export default function Profile() {
   };
 
   const menuItems = [
-    { 
+    {
       icon: '👤', 
       title: 'Edit Profile', 
       subtitle: 'Update your personal information',
-      action: () => setShowEditModal(true)
+      action: () => {
+        // Update editData with current profileData before showing modal
+        setEditData({
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone
+        });
+        setShowEditModal(true);
+      }
     },
     { 
       icon: '💳', 
@@ -148,19 +190,22 @@ export default function Profile() {
       {/* Settings toggles */}
       {item.title === 'Settings' && (
         <View className="bg-gray-50 px-4 py-3">
-          {Object.entries(settings).map(([key, value]) => (
-            <View key={key} className="flex-row justify-between items-center py-3 border-b border-gray-200">
-              <Text className="text-gray-700 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </Text>
-              <Switch
-                value={value}
-                onValueChange={() => handleToggleSetting(key)}
-                trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
-                thumbColor={value ? '#FFFFFF' : '#9CA3AF'}
-              />
-            </View>
-          ))}
+          {Object.entries(settings).map(([key, value]) => {
+            const typedKey = key as keyof typeof settings;
+            return (
+              <View key={key} className="flex-row justify-between items-center py-3 border-b border-gray-200">
+                <Text className="text-gray-700 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </Text>
+                <Switch
+                  value={value}
+                  onValueChange={() => handleToggleSetting(typedKey)}
+                  trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
+                  thumbColor={value ? '#FFFFFF' : '#9CA3AF'}
+                />
+              </View>
+            );
+          })}
         </View>
       )}
     </View>
@@ -197,6 +242,7 @@ export default function Profile() {
                 className="bg-gray-100 rounded-xl p-3 text-gray-800"
                 placeholder="Enter your email"
                 keyboardType="email-address"
+                autoCapitalize="none"
               />
             </View>
 
@@ -234,9 +280,8 @@ export default function Profile() {
   );
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <ScrollView className="flex-1">
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <ScrollView className="flex-1">
           {/* Enhanced Header */}
           <View className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-8">
             <Text className="text-2xl font-bold text-black mb-6">Profile</Text>
@@ -298,7 +343,15 @@ export default function Profile() {
               'Are you sure you want to logout?',
               [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logged out!') }
+                { text: 'Logout', style: 'destructive', onPress: () => {
+                    // Clear user data
+                    AsyncStorage.removeItem('userProfile');
+                    AsyncStorage.removeItem('userSettings');
+                    // Show confirmation and navigate to login or home
+                    Alert.alert('Logged out!', 'You have been successfully logged out.');
+                    // In a real app, you would navigate to login screen here
+                  }
+                }
               ]
             )}
             activeOpacity={0.8}
@@ -318,6 +371,5 @@ export default function Profile() {
 
         <EditProfileModal />
       </SafeAreaView>
-    </SafeAreaProvider>
   );
-}
+};

@@ -1,10 +1,10 @@
 import { images } from '@/constants/images';
+import { useHotels } from '@/hooks/useHotels';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Image, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import HotelCard from '@/components/HotelCard';
-import { useHotels, useSearchHotels } from '@/hooks/useHotels';
 
 export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Popular');
@@ -31,12 +31,12 @@ export default function App() {
   };
 
   // Handle search with debouncing effect
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (searchQuery.length > 0) {
       console.log('Searching for:', searchQuery, 'in category:', selectedCategory);
       // The search is handled automatically by the useHotels hook when searchQuery changes
     }
-  };
+  }, [searchQuery, selectedCategory]);
 
   // Use filtered hotels from API or empty array
   const filteredHotels = useMemo(() => {
@@ -52,17 +52,16 @@ export default function App() {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, handleSearch]);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
-        <ScrollView 
-          className="flex-1 px-6"
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+      <ScrollView 
+        className="flex-1 px-6"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
           {/* Enhanced Header Section */}
           <View className="flex-row justify-between items-center pt-6 mb-6">
             <View className="flex-1">
@@ -195,7 +194,7 @@ export default function App() {
                 <Text className="text-gray-500 text-lg">Loading hotels...</Text>
                 <View className="mt-4">
                   <View className="w-16 h-1 bg-blue-200 rounded-full overflow-hidden">
-                    <View className="w-1/3 h-full bg-blue-500 rounded-full animate-pulse"></View>
+                    <View className="w-1/3 h-full bg-blue-500 rounded-full"></View>
                   </View>
                 </View>
               </View>
@@ -242,6 +241,5 @@ export default function App() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }

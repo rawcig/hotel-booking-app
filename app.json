@@ -8,15 +8,14 @@
     "scheme": "bookingapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-        "image": "./assets/icons/SETEC-Logo.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#dedede",
-        "textColor": "#000000"
-      },
+      "image": "./assets/icons/SETEC-Logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#dedede",
+      "textColor": "#000000"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-     
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,17 +25,16 @@
         "foregroundImage": "./assets/icons/SETEC-Logo.png",
         "backgroundColor": "#dedede"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.rawh.bookingApp"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/icons/SETEC-Logo.png"
     },
-  
     "experiments": {
       "typedRoutes": true
     }
-   
   }
 }

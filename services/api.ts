@@ -1,4 +1,11 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { 
+  getAccessToken, 
+  getRefreshToken, 
+  setAccessToken, 
+  setRefreshToken, 
+  clearAuthTokens 
+} from '@/lib/storage';
 
 // Define API response structure
 export interface ApiResponse<T = any> {
@@ -29,8 +36,8 @@ class ApiService {
 
     // Request interceptor to add auth token
     this.axiosInstance.interceptors.request.use(
-      (config) => {
-        const token = this.getAccessToken();
+      async (config) => {
+        const token = await getAccessToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -53,12 +60,12 @@ class ApiService {
 
           try {
             const tokens = await this.refreshToken();
-            this.setTokens(tokens);
+            await this.setTokens(tokens);
             originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
             return this.axiosInstance(originalRequest);
           } catch (refreshError) {
             // Refresh failed, redirect to login
-            this.clearTokens();
+            await this.clearTokens();
             // You might want to redirect to login screen here
             return Promise.reject(refreshError);
           }
@@ -70,35 +77,26 @@ class ApiService {
   }
 
   // Authentication methods
-  private getAccessToken(): string | null {
-    try {
-      return localStorage.getItem('accessToken');
-    } catch {
-      return null;
-    }
+  private async getAccessToken(): Promise<string | null> {
+    return await getAccessToken();
   }
 
-  private getRefreshToken(): string | null {
-    try {
-      return localStorage.getItem('refreshToken');
-    } catch {
-      return null;
-    }
+  private async getRefreshToken(): Promise<string | null> {
+    return await getRefreshToken();
   }
 
-  public setTokens(tokens: AuthTokens): void {
+  public async setTokens(tokens: AuthTokens): Promise<void> {
     try {
-      localStorage.setItem('accessToken', tokens.accessToken);
-      localStorage.setItem('refreshToken', tokens.refreshToken);
+      await setAccessToken(tokens.accessToken);
+      await setRefreshToken(tokens.refreshToken);
     } catch (error) {
       console.error('Failed to store tokens:', error);
     }
   }
 
-  public clearTokens(): void {
+  public async clearTokens(): Promise<void> {
     try {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      await clearAuthTokens();
     } catch (error) {
       console.error('Failed to clear tokens:', error);
     }

@@ -1,9 +1,8 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHotel } from '@/hooks/useHotels';
-import { Hotel } from '@/lib/supabase';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -34,21 +33,17 @@ export default function HotelDetail() {
 
   if (isLoading) {
     return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-500">Loading hotel details...</Text>
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-lg text-gray-500">Loading hotel details...</Text>
+      </SafeAreaView>
     );
   }
 
   if (error || !hotel) {
     return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-500">Hotel not found</Text>
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-lg text-gray-500">Hotel not found</Text>
+      </SafeAreaView>
     );
   }
 
@@ -108,15 +103,32 @@ export default function HotelDetail() {
             </View>
           )}
           keyExtractor={(item, index) => index.toString()}
+          getItemLayout={(data, index) => ({
+            length: screenWidth,
+            offset: screenWidth * index,
+            index,
+          })}
+          onScrollToIndexFailed={(info) => {
+            console.warn('Failed to scroll to index:', info);
+          }}
+          // Optimization props to prevent images from disappearing
+          windowSize={3}
+          initialNumToRender={3}
+          maxToRenderPerBatch={2}
+          updateCellsBatchingPeriod={100}
+          removeClippedSubviews={false}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
         />
       </SafeAreaView>
     </Modal>
   );
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1">
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="flex-1">
           {/* Header with Back Button - Your original design enhanced */}
           <View className="relative">
             <TouchableOpacity 
@@ -230,7 +242,7 @@ export default function HotelDetail() {
             )}
 
             {/* Reviews - New */}
-            {hotel.reviews && hotel.reviews.length > 0 && (
+            {/* {hotel.reviews && hotel.reviews.length > 0 && (
               <View className="mb-6">
                 <View className="flex-row justify-between items-center mb-3">
                   <Text className="text-lg font-bold text-gray-800">Reviews</Text>
@@ -260,7 +272,7 @@ export default function HotelDetail() {
                   </View>
                 ))}
               </View>
-            )}
+            )} */}
 
             {/* Location - New */}
             <View className="mb-6">
@@ -294,6 +306,5 @@ export default function HotelDetail() {
         {/* Image Gallery Modal */}
         <ImageGalleryModal />
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }

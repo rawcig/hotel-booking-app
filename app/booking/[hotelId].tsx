@@ -1,12 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useHotel } from '@/hooks/useHotels';
+import { supabase } from '@/lib/supabase';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '@/lib/supabase';
-import { Hotel } from '@/lib/supabase';
-import { useHotel } from '@/hooks/useHotels';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BookingForm() {
   const { hotelId } = useLocalSearchParams();
@@ -42,30 +40,27 @@ export default function BookingForm() {
   // Show loading state
   if (isLoading) {
     return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-500">Loading hotel details...</Text>
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-lg text-gray-500">Loading hotel details...</Text>
+      </SafeAreaView>
     );
   }
   
   // Show error state
   if (error || !hotel) {
     return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-500">Hotel not found</Text>
-          <TouchableOpacity 
-            onPress={() => router.back()}
-            className="mt-4 bg-blue-500 px-4 py-2 rounded"
-          >
-            <Text className="text-white">Go Back</Text>
-          </TouchableOpacity>
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+        <Text className="text-lg text-gray-500">Hotel not found</Text>
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          className="mt-4 bg-blue-500 px-4 py-2 rounded"
+        >
+          <Text className="text-white">Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     );
   }
+
   const calculateNights = () => {
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
     const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
@@ -188,7 +183,7 @@ export default function BookingForm() {
       };
 
       // Save to Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('bookings')
         .insert([bookingData])
         .select()
@@ -336,25 +331,23 @@ export default function BookingForm() {
     </Modal>
   );
 
-
-
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1 px-4">
-          {/* Header */}
-          <View className="flex-row items-center pt-4 mb-6">
-            <TouchableOpacity 
-              onPress={() => router.back()}
-              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-4"
-            >
-              <Text className="text-lg">←</Text>
-            </TouchableOpacity>
-            <Text className="text-xl font-bold text-gray-800">Book Hotel</Text>
-          </View>
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Fixed header */}
+      <View className="flex-row items-center pt-4 pb-4 px-4 bg-white border-b border-gray-200">
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-4"
+        >
+          <Text className="text-lg">←</Text>
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-gray-800">Book Hotel</Text>
+      </View>
 
+        {/* Scrollable content area */}
+        <ScrollView className="flex-1 px-4 mb-24">
           {/* Hotel Info */}
-          <View className="bg-gray-50 rounded-xl p-4 mb-6">
+          <View className="bg-gray-50 rounded-xl p-4 mb-6 mt-2">
             <Text className="text-lg font-bold text-gray-800">{hotel.name}</Text>
             <Text className="text-gray-600">{hotel.location}</Text>
             <Text className="text-blue-600 font-bold">${hotel.price}/night</Text>
@@ -510,6 +503,43 @@ export default function BookingForm() {
             </View>
           </View>
 
+          {/* Payment Method Selection */}
+          <View className="mb-6">
+            <Text className="text-lg font-bold text-gray-800 mb-4">Payment Method</Text>
+            
+            {selectedPaymentMethod ? (
+              <View className="bg-blue-50 rounded-xl p-4">
+                <View className="flex-row justify-between items-center">
+                  <View>
+                    <Text className="text-gray-700">Selected Payment</Text>
+                    <Text className="text-lg font-bold text-gray-800">
+                      {selectedPaymentMethod === 'card' && 'Credit/Debit Card'}
+                      {selectedPaymentMethod === 'paypal' && 'PayPal'}
+                      {selectedPaymentMethod === 'cash' && 'Cash on Arrival'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setSelectedPaymentMethod(null);
+                      setPaymentConfirmed(false);
+                    }}
+                    className="bg-gray-200 px-3 py-1 rounded-full"
+                  >
+                    <Text className="text-gray-700 text-sm">Change</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                onPress={() => setShowPaymentPicker(true)}
+                className="bg-gray-100 rounded-xl p-4 flex-row items-center justify-between border-2 border-dashed border-gray-300"
+              >
+                <Text className="text-gray-600">Select payment method</Text>
+                <Text className="text-blue-500 text-lg">+</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* Total Price */}
           <View className="bg-blue-50 rounded-xl p-4 mb-6">
             <View className="flex-row justify-between items-center">
@@ -520,33 +550,32 @@ export default function BookingForm() {
               {calculateNights()} night{calculateNights() > 1 ? 's' : ''} • {rooms} room{Number(rooms) > 1 ? 's' : ''}
             </Text>
           </View>
+        </ScrollView>
 
-          {/* Confirm Button */}
-          {/* <TouchableOpacity 
-            className="bg-blue-500 py-4 rounded-xl mb-8"
-            onPress={saveBooking}
-          >
-            <Text className="text-white text-center text-lg font-semibold">Confirm Booking</Text>
-          </TouchableOpacity> */}
-
+        {/* Fixed bottom button */}
+        <View className="absolute bottom-0 left-0 right-0 bg-white p-4 pb-6 border-t  border-gray-200">
           <TouchableOpacity 
-            className="bg-blue-500 py-4 rounded-xl mb-8"
+            className={` py-4 rounded-xl ${selectedPaymentMethod ? 'bg-blue-500' : 'bg-gray-300'}`}
             onPress={() => {
-              if (!selectedPaymentMethod) setShowPaymentPicker(true);       // pick payment method first
-              else if (selectedPaymentMethod === 'card' && !paymentConfirmed) setShowCardModal(true); // open card modal
-              else saveBooking();  // cash or PayPal already confirmed
+              if (!selectedPaymentMethod) {
+                setShowPaymentPicker(true);
+              } else if (selectedPaymentMethod === 'card' && !paymentConfirmed) {
+                setShowCardModal(true);
+              } else {
+                saveBooking();
+              }
             }}
+            disabled={!selectedPaymentMethod}
           >
             <Text className="text-white text-center text-lg font-semibold">
               {selectedPaymentMethod
                 ? selectedPaymentMethod === 'card'
-                  ? paymentConfirmed ? 'Confirm Booking' : 'Pay & Confirm'
+                  ? paymentConfirmed ? 'Confirm Booking' : 'Enter Card Details'
                   : 'Confirm Booking'
                 : 'Select Payment Method'}
             </Text>
           </TouchableOpacity>
-
-        </ScrollView>
+        </View>
 
         {/* Date Pickers */}
         {Platform.OS === 'ios' ? (
@@ -593,6 +622,5 @@ export default function BookingForm() {
         <PaymentMethodPicker visible={showPaymentPicker} onClose={() => setShowPaymentPicker(false)} />
         <CardPaymentModal visible={showCardModal} onClose={() => setShowCardModal(false)} />
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }

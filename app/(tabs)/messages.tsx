@@ -2,7 +2,7 @@ import { messages } from '@/constants/data';
 import { router } from 'expo-router';
 import React from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Messages() {
   const renderMessageItem = (message: any) => (
@@ -50,9 +50,8 @@ export default function Messages() {
   );
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1">
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="flex-1">
           {/* Header */}
           <View className="p-4 border-b border-gray-100">
             <Text className="text-2xl font-bold text-gray-800">Messages</Text>
@@ -97,7 +96,6 @@ export default function Messages() {
           <Text className="text-white text-2xl font-bold">+</Text>
         </TouchableOpacity>
       </SafeAreaView>
-    </SafeAreaProvider>
   );
-};
+};;
 // export default Messages;

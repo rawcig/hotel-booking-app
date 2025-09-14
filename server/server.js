@@ -1,4 +1,8 @@
 // server.js
+1// NOTE: This is a Node.js/Express server that should be run separately from the React Native app
+// It cannot be run in the React Native environment because it uses Node.js built-in modules like 'path'
+// To run this server: cd server && npm start
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -14,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve admin portal static files
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -28,7 +32,7 @@ app.get('/', (req, res) => {
 
 // Admin portal route (serves index.html for any admin route)
 app.get('/admin/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+  res.sendFile(path.resolve(__dirname, 'admin', 'index.html'));
 });
 
 // Error handling middleware
