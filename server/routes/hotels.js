@@ -42,7 +42,9 @@ router.get('/', async (req, res) => {
     const { data, error, count } = await query;
     
     if (error) {
+      console.error('Supabase fetch error:', error);
       return res.status(500).json({ 
+        success: false,
         message: 'Database error',
         error: error.message 
       });
@@ -50,16 +52,18 @@ router.get('/', async (req, res) => {
     
     res.json({
       success: true,
-      hotels: data,
+      hotels: data || [],
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalCount: count,
+        totalPages: Math.ceil((count || 0) / limit),
+        totalCount: count || 0,
         limit: parseInt(limit)
       }
     });
   } catch (error) {
+    console.error('Server error in hotels route:', error);
     res.status(500).json({ 
+      success: false,
       message: 'Server error',
       error: error.message 
     });

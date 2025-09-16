@@ -4,25 +4,40 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { handleApiError, showConfirmation } from '@/utils/errorHandler';
+import { BookingServiceError } from '@/api/services/bookings';
+import { useUser } from '@/context/UserContext';
+import { useRouter } from 'expo-router';
 
 export default function MyBooking() {
+  const router = useRouter();
+  const { user } = useUser();
   const [selectedTab, setSelectedTab] = useState('current');
   const { data: bookingsData, isLoading, refetch } = useBookings();
   const { mutate: cancelBooking } = useCancelBooking();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Check if user is a guest
+  const isGuest = user?.isGuest || !user;
+
   // Refresh bookings when screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      refetch();
-    }, [refetch])
+      if (!isGuest) {
+        refetch();
+      }
+    }, [refetch, isGuest])
   );
 
   // Pull to refresh functionality
   const onRefresh = useCallback(() => {
+    if (isGuest) {
+      setRefreshing(false);
+      return;
+    }
     setRefreshing(true);
     refetch().finally(() => setRefreshing(false));
-  }, [refetch]);
+  }, [refetch, isGuest]);
 
   const currentBookings = (bookingsData?.bookings || []).filter(booking => 
     booking.status === 'confirmed' || booking.status === 'pending'
@@ -74,32 +89,41 @@ export default function MyBooking() {
       return;
     }
     
-    Alert.alert(
+    showConfirmation(
       'Cancel Booking',
       'Are you sure you want to cancel this booking?',
-      [
-        {
-          text: 'No',
-          style: 'cancel'
-        },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: () => {
-            cancelBooking(id, {
-              onSuccess: () => {
-                Alert.alert('Success', 'Booking has been cancelled');
-              },
-              onError: (error) => {
-                console.error('Error cancelling booking:', error);
-                console.error('Booking ID that failed:', id);
-                Alert.alert('Error', 'Failed to cancel booking');
+      () => {
+        cancelBooking(id, {
+          onSuccess: () => {
+            Alert.alert('Success', 'Booking has been cancelled');
+            // Refresh the bookings list
+            refetch();
+          },
+          onError: (error: any) => {
+            console.error('Error cancelling booking:', error);
+            console.error('Booking ID that failed:', id);
+            
+            // Handle specific error types
+            if (error instanceof BookingServiceError) {
+              if (error.code === 'NOT_FOUND') {
+                Alert.alert('Error', 'Booking not found');
+              } else if (error.code === '42501') {
+                Alert.alert('Error', 'You do not have permission to cancel this booking');
+              } else {
+                Alert.alert('Error', error.message);
               }
-            });
+            } else {
+              handleApiError(error, 'cancel booking');
+            }
           }
-        }
-      ]
+        });
+      }
     );
+  };
+
+  // Handle login for guests
+  const handleLogin = () => {
+    router.push('/login');
   };
 
   return (
@@ -115,6 +139,22 @@ export default function MyBooking() {
           <Text className="text-2xl font-bold text-gray-800 mb-4">
             My Bookings
           </Text>
+          
+          {/* Guest Info */}
+          {isGuest && (
+            <View className="bg-yellow-50 rounded-xl p-4 mb-4">
+              <Text className="text-yellow-800 font-medium mb-1">Guest Mode</Text>
+              <Text className="text-yellow-700 text-sm mb-3">
+                Your bookings are only saved temporarily. Sign in to keep them permanently.
+              </Text>
+              <TouchableOpacity 
+                onPress={handleLogin}
+                className="bg-yellow-500 py-2 rounded-lg"
+              >
+                <Text className="text-white text-center font-medium">Sign In to Save Bookings</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           
           {/* Tab Buttons */}
           <View className="flex-row bg-gray-100 rounded-xl p-1">
@@ -148,7 +188,21 @@ export default function MyBooking() {
 
         {/* Bookings List */}
         <View className="mb-20">
-          {isLoading ? (
+          {isGuest ? (
+            <View className="items-center justify-center py-20">
+              <Text className="text-6xl mb-4">🏨</Text>
+              <Text className="text-gray-500 text-xl font-semibold mb-2">No Bookings Found</Text>
+              <Text className="text-gray-400 text-center px-8 mb-6">
+                Sign in to view and manage your bookings.
+              </Text>
+              <TouchableOpacity 
+                onPress={handleLogin}
+                className="bg-blue-500 px-6 py-3 rounded-xl"
+              >
+                <Text className="text-white font-semibold">Sign In Now</Text>
+              </TouchableOpacity>
+            </View>
+          ) : isLoading ? (
             <View className="items-center justify-center py-20">
               <Text className="text-gray-500 text-lg">Loading bookings...</Text>
             </View>

@@ -164,16 +164,31 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const bookingId = parseInt(req.params.id);
-    const updateData = req.body;
+    
+    console.log('Booking update request for ID:', req.params.id);
+    console.log('Parsed bookingId:', bookingId);
+    console.log('Is NaN:', isNaN(bookingId));
     
     if (isNaN(bookingId)) {
+      console.log('Invalid booking ID provided:', req.params.id);
       return res.status(400).json({ 
-        message: 'Invalid booking ID' 
+        message: 'Invalid booking ID',
+        providedId: req.params.id,
+        parsedId: bookingId
       });
     }
     
-    // Remove id from update data
-    delete updateData.id;
+    const updateData = req.body;
+    console.log('Update data received:', JSON.stringify(updateData, null, 2));
+    
+    // Remove id from update data if present
+    if (updateData.id) {
+      delete updateData.id;
+    }
+    
+    // For admin updates, we might not have user_id, so let's not require it
+    // But if it's provided, we should keep it
+    console.log('Sending update to Supabase:', JSON.stringify(updateData, null, 2));
     
     const { data, error } = await supabase
       .from('bookings')
@@ -183,23 +198,30 @@ router.put('/:id', async (req, res) => {
       .single();
     
     if (error) {
-      return res.status(500).json({ 
-        message: 'Database error',
-        error: error.message 
+      console.error('Supabase update error:', error);
+      // Let's try to get more details about the error
+      return res.status(400).json({ 
+        message: 'Database error during update',
+        error: error.message,
+        details: error.details || 'No additional details'
       });
     }
     
     if (!data) {
+      console.log('Booking not found with ID:', bookingId);
       return res.status(404).json({ 
         message: 'Booking not found' 
       });
     }
+    
+    console.log('Booking updated successfully:', JSON.stringify(data, null, 2));
     
     res.json({
       success: true,
       booking: data
     });
   } catch (error) {
+    console.error('Server error updating booking:', error);
     res.status(500).json({ 
       message: 'Server error',
       error: error.message 

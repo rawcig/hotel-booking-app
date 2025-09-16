@@ -1,6 +1,7 @@
 // routes/auth.js
 const express = require('express');
 const router = express.Router();
+const { storeToken, removeToken } = require('../middleware/auth');
 
 // For demo purposes, we'll use a simple authentication system
 // In a real app, you would integrate with Supabase Auth or another auth system
@@ -14,9 +15,6 @@ const users = [
     role: 'admin'
   }
 ];
-
-// Simple token storage (in a real app, use JWT or session management)
-const tokens = new Map();
 
 // Generate a simple token
 function generateToken() {
@@ -52,7 +50,7 @@ router.post('/login', (req, res) => {
     
     // Generate token
     const token = generateToken();
-    tokens.set(token, user.id);
+    storeToken(token, user.id);
     
     res.json({
       success: true,
@@ -99,7 +97,7 @@ router.post('/signup', (req, res) => {
     
     // Generate token
     const token = generateToken();
-    tokens.set(token, newUser.id);
+    storeToken(token, newUser.id);
     
     res.status(201).json({
       success: true,
@@ -116,11 +114,26 @@ router.post('/signup', (req, res) => {
 
 // Logout endpoint
 router.post('/logout', (req, res) => {
-  // In a real app, you would invalidate the token
-  res.json({ 
-    success: true,
-    message: 'Logged out successfully' 
-  });
+  try {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      removeToken(token);
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Logged out successfully' 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error during logout',
+      error: error.message 
+    });
+  }
 });
 
 module.exports = router;

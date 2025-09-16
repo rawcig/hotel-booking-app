@@ -5,9 +5,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@/context/UserContext';
+import { validateBookingForm, sanitizeName, sanitizeEmail, sanitizePhone, sanitizeInput } from '@/utils/validation';
+import NotificationService from '@/services/NotificationService';
+import { bookingsService } from '@/api/services/bookings';
 
 export default function BookingForm() {
   const { hotelId } = useLocalSearchParams();
+  const { user } = useUser();
   const hotelIdParam = Array.isArray(hotelId) ? parseInt(hotelId[0]) : parseInt(hotelId as string);
   
   // Fetch hotel data from Supabase
@@ -20,11 +25,20 @@ export default function BookingForm() {
   const [showCheckOutPicker, setShowCheckOutPicker] = useState(false);
   
   // Form states
-  const [guests, setGuests] = useState('2');
-  const [rooms, setRooms] = useState('1');
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
+  const [guests, setGuests] = useState('2');
+  const [rooms, setRooms] = useState('1');
+  
+  // Auto-fill user data when user is logged in
+  React.useEffect(() => {
+    if (user) {
+      setGuestName(user.name || '');
+      setGuestEmail(user.email || '');
+      setGuestPhone(user.phone || '');
+    }
+  }, [user]);
   
   // Payment states
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'paypal' | 'cash' | null>(null);
@@ -115,107 +129,90 @@ export default function BookingForm() {
 
   // Save booking function
   const saveBooking = async () => {
-    // Validate form
-    if (!guestName.trim()) {
-      Alert.alert('Error', 'Please enter guest name');
-      return;
-    }
-    if (!guestEmail.trim()) {
-      Alert.alert('Error', 'Please enter email address');
-      return;
-    }
-    if (!guestPhone.trim()) {
-      Alert.alert('Error', 'Please enter phone number');
+    // Validate form using our validation utility
+    const errors = validateBookingForm({
+      guestName,
+      guestEmail,
+      guestPhone,
+      guests,
+      rooms,
+      checkInDate,
+      checkOutDate
+    });
+    
+    // If there are validation errors, show the first one
+    if (errors.length > 0) {
+      Alert.alert('Validation Error', errors[0].message);
       return;
     }
     
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(guestEmail)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-    
-    // Validate phone format (simple validation)
-    const phoneRegex = /^[0-9+\-\s\(\)]+$/;
-    if (!phoneRegex.test(guestPhone)) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
-    }
-    
-    // Validate date selection
-    if (checkOutDate <= checkInDate) {
-      Alert.alert('Error', 'Check-out date must be after check-in date');
-      return;
-    }
-    
-    // Validate guests and rooms
-    const guestsNum = parseInt(guests);
-    const roomsNum = parseInt(rooms);
-    
-    if (isNaN(guestsNum) || guestsNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid number of guests');
-      return;
-    }
-    
-    if (isNaN(roomsNum) || roomsNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid number of rooms');
-      return;
-    }
-
     try {
-      // Create booking object for Supabase
+      // Sanitize inputs before sending to backend
+      const sanitizedGuestName = sanitizeName(guestName);
+      const sanitizedGuestEmail = sanitizeEmail(guestEmail);
+      const sanitizedGuestPhone = sanitizePhone(guestPhone);
+      
+      // Create booking object for the service
       const bookingData = {
         hotel_id: hotel.id,
-        user_id: 'user-123', // In a real app, this would be the actual user ID
+        user_id: user?.id || `guest-${Date.now()}`, // Use actual user ID from context or guest ID
         check_in: formatDate(checkInDate),
         check_out: formatDate(checkOutDate),
-        guests: guestsNum,
-        rooms: roomsNum,
-        guest_name: guestName,
-        guest_email: guestEmail,
-        guest_phone: guestPhone,
+        guests: parseInt(guests, 10),
+        rooms: parseInt(rooms, 10),
+        guest_name: sanitizedGuestName,
+        guest_email: sanitizedGuestEmail,
+        guest_phone: sanitizedGuestPhone,
         total_price: calculateTotal().toString(),
         status: 'confirmed',
-        hotel_name: hotel.name,
-        location: hotel.location,
+        hotel_name: sanitizeInput(hotel.name),
+        location: sanitizeInput(hotel.location),
         image: hotel.image
       };
 
-      // Save to Supabase
-      const { error } = await supabase
-        .from('bookings')
-        .insert([bookingData])
-        .select()
-        .single();
+      try {
+        // Save using the booking service
+        const bookingResult = await bookingsService.createBooking(bookingData);
 
-      if (error) {
+        Alert.alert(
+          'Booking Confirmed!', 
+          `Your booking at ${hotel.name} has been confirmed.`,
+          [
+            {
+              text: 'View Bookings',
+              onPress: () => router.push('/(tabs)/my_booking' as any)
+            },
+            {
+              text: 'OK',
+              onPress: () => router.back()
+            }
+          ]
+        );
+        
+        // Send booking confirmation notification
+        await NotificationService.sendBookingConfirmation(
+          hotel.name,
+          formatDate(checkInDate),
+          formatDate(checkOutDate),
+          bookingResult.id
+        );
+      } catch (error: any) {
         console.error('Booking save error:', error);
-        if (error.code === '42501') {
-          Alert.alert('Error', 'Booking failed due to permissions. Please contact support.');
+        // Handle specific error types
+        if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+          Alert.alert('Network Error', 'Please check your internet connection and try again.');
         } else {
-          Alert.alert('Error', 'Failed to save booking. Please try again.');
+          Alert.alert('Error', `Failed to save booking: ${error.message || 'Unknown error occurred'}`);
         }
-        return;
       }
-
-      Alert.alert(
-        'Booking Confirmed!', 
-        `Your booking at ${hotel.name} has been confirmed.`,
-        [
-          {
-            text: 'View Bookings',
-            onPress: () => router.push('/(tabs)/my_booking' as any)
-          },
-          {
-            text: 'OK',
-            onPress: () => router.back()
-          }
-        ]
-      );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking save error:', error);
-      Alert.alert('Error', 'Failed to save booking. Please try again.');
+      // Handle network errors and other exceptions
+      if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        Alert.alert('Network Error', 'Please check your internet connection and try again.');
+      } else {
+        Alert.alert('Error', `Failed to save booking: ${error.message || 'Unknown error occurred'}`);
+      }
     }
   };
 

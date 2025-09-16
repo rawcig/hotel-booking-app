@@ -1,5 +1,5 @@
 // server.js
-1// NOTE: This is a Node.js/Express server that should be run separately from the React Native app
+// NOTE: This is a Node.js/Express server that should be run separately from the React Native app
 // It cannot be run in the React Native environment because it uses Node.js built-in modules like 'path'
 // To run this server: cd server && npm start
 
@@ -22,7 +22,9 @@ app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/hotels', require('./routes/hotels'));
+app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/bookings', require('./routes/bookings'));
 
 // Redirect root to admin portal
@@ -38,7 +40,11 @@ app.get('/admin/*', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ 
+    success: false,
+    message: 'Something went wrong!',
+    error: err.message 
+  });
 });
 
 app.listen(PORT, () => {
