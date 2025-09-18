@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheK Hotel Portal</title>
+    <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="auth-page">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>Login to Account</h2>
+                <p class="auth-subtitle">Please enter your email and password to continue</p>
+                
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email address:</label>
+                        <input type="email" id="loginEmail" placeholder="esteban_schiller@gmail.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="loginPassword">Password</label>
+                            <a href="#" class="forgot-link">Forget Password?</a>
+                        </div>
+                        <input type="password" id="loginPassword" placeholder="••••••" required>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="rememberPassword">
+                        <label for="rememberPassword">Remember Password</label>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Sign In</button>
+                    
+                    <p class="auth-link">
+                        Don't have an account? 
+                        <a href="#" onclick="showRegister()">Create Account</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Page -->
+    <div id="registerPage" class="auth-page" style="display: none;">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>Create an Account</h2>
+                <p class="auth-subtitle">Create a account to continue</p>
+                
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="registerEmail">Email address:</label>
+                        <input type="email" id="registerEmail" placeholder="esteban_schiller@gmail.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" placeholder="Username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="registerPassword">Password</label>
+                            <a href="#" class="forgot-link">Forget Password?</a>
+                        </div>
+                        <input type="password" id="registerPassword" placeholder="••••••" required>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="acceptTerms" required>
+                        <label for="acceptTerms">I accept terms and conditions</label>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Sign Up</button>
+                    
+                    <p class="auth-link">
+                        Already have an account? 
+                        <a href="#" onclick="showLogin()">Login</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="main-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">TheK Hotel</div>
+            <nav class="nav-menu">
+                <div class="nav-item active" data-page="dashboard">Dashboard</div>
+                <div class="nav-item" data-page="rooms">Rooms</div>
+                <div class="nav-item" data-page="favorites">Favorites</div>
+                <div class="nav-item" data-page="bookingList">BookingList</div>
+                <div class="nav-item" data-page="roomAvailable">Room Available</div>
+                <div class="nav-item" data-page="userRole">User role</div>
+            </nav>
+            <div class="logout-btn">Logout</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search" id="globalSearch">
+                </div>
+                <div class="header-right">
+                    <div class="notification">🔔</div>
+                    <div class="language-selector">
+                        <span>🇬🇧</span>
+                        <span>English</span>
+                        <span>⌄</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar"></div>
+                        <div class="user-info">
+                            <div class="user-name">Kha Kha</div>
+                            <div class="user-role">Admin</div>
+                        </div>
+                        <span>⌄</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div id="dashboardContent" class="page-content">
+                <h1 class="page-title">Dashboard</h1>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon customers">👥</div>
+                        <div class="stat-info">
+                            <h3>406</h3>
+                            <p>Total Customer</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bookings">📦</div>
+                        <div class="stat-info">
+                            <h3>102</h3>
+                            <p>Total Booking</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon payments">💰</div>
+                        <div class="stat-info">
+                            <h3>$891,000</h3>
+                            <p>Total Payment</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon rooms">🏠</div>
+                        <div class="stat-info">
+                            <h3>20</h3>
+                            <p>Room Available</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Table -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Deals Details</h2>
+                        <select class="month-selector">
+                            <option>October</option>
+                            <option>November</option>
+                            <option>December</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>RoomID</th>
+                                    <th>Room Name/Number</th>
+                                    <th>RoomType</th>
+                                    <th>Floor</th>
+                                    <th>BedType</th>
+                                    <th>PricePerNight</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardTableBody">
+                                <!-- Content populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rooms Content -->
+            <div id="roomsContent" class="page-content" style="display: none;">
+                <h1 class="page-title">Rooms</h1>
+                <div class="rooms-grid" id="roomsGrid">
+                    <!-- Room cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Booking List Content -->
+            <div id="bookingListContent" class="page-content" style="display: none;">
+                <h1 class="page-title">Booking Lists</h1>
+                <div class="content-section">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>RoomID</th>
+                                    <th>CheckInDate</th>
+                                    <th>CheckOutDate</th>
+                                    <th>BookingStatus</th>
+                                    <th>PaymentStatus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookingTableBody">
+                                <!-- Content populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <span>Showing 1-09 of 78</span>
+                        <div class="pagination">
+                            <button class="pagination-btn">⟨</button>
+                            <button class="pagination-btn">⟩</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Available Content -->
+            <div id="roomAvailableContent" class="page-content" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">Rooms Available</h1>
+                    <div class="search-bar small">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" placeholder="Search product name" id="roomSearch">
+                    </div>
+                </div>
+                
+                <div class="content-section">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>RoomID</th>
+                                    <th>Room Name/Type</th>
+                                    <th>PricePerNight</th>
+                                    <th>Floor</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="availableRoomsTableBody">
+                                <!-- Content populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <span>Showing 1-09 of 78</span>
+                        <div class="pagination">
+                            <button class="pagination-btn">⟨</button>
+                            <button class="pagination-btn">⟩</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Favorites Content -->
+            <div id="favoritesContent" class="page-content" style="display: none;">
+                <h1 class="page-title">Favorites</h1>
+                <p>Favorite rooms will be displayed here.</p>
+            </div>
+
+            <!-- User Role Content -->
+            <div id="userRoleContent" class="page-content" style="display: none;">
+                <h1 class="page-title">User Role</h1>
+                <p>User role management will be displayed here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Room Modal -->
+    <div id="editRoomModal" class="modal" style="display: none;" role="dialog" aria-labelledby="editRoomModalTitle" aria-modal="true" tabindex="-1">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editRoomModalTitle">Edit Room</h2>
+                <button class="close" onclick="closeEditRoomModal()" aria-label="Close edit room modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editRoomForm">
+                    <input type="hidden" id="editRoomId">
+                    <div class="form-group">
+                        <label for="editRoomName">Room Name:</label>
+                        <input type="text" id="editRoomName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomLocation">Location:</label>
+                        <input type="text" id="editRoomLocation" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomPrice">Price per Night:</label>
+                        <input type="number" id="editRoomPrice" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomRating">Rating:</label>
+                        <input type="number" id="editRoomRating" class="form-control" step="0.1" min="0" max="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomImage">Image URL:</label>
+                        <input type="text" id="editRoomImage" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomDescription">Description:</label>
+                        <textarea id="editRoomDescription" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRoomAmenities">Amenities (comma separated):</label>
+                        <input type="text" id="editRoomAmenities" class="form-control">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeEditRoomModal()">Cancel</button>
+                        <button type="submit" class="auth-btn">Update Room</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="JS/script.js"></script>
+</body>
+</html>
