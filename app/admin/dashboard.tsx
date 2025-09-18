@@ -1,15 +1,38 @@
 // app/admin/dashboard.tsx
 // Admin dashboard screen
 
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, Image, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAdmin } from '@/context/AdminContext';
 import { images } from '@/constants/images';
+import { analyticsService } from '@/services/analyticsService';
 
 export default function AdminDashboard() {
   const { admin, logout, isSuperAdmin } = useAdmin();
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [analytics, setAnalytics] = useState<any>(null);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = () => {
+    const summary = analyticsService.getSummary();
+    const bookingAnalytics = analyticsService.getBookingAnalytics();
+    
+    setAnalytics({
+      summary,
+      bookingAnalytics
+    });
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadAnalytics();
+    setRefreshing(false);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -61,7 +84,12 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView 
+      className="flex-1 bg-gray-50"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Header */}
       <View className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-8">
         <View className="flex-row justify-between items-center mb-6">
@@ -99,18 +127,24 @@ export default function AdminDashboard() {
         </View>
       </View>
 
-      {/* Stats Cards */}
+      {/* Analytics Cards */}
       <View className="flex-row p-4 gap-3 -mt-4">
         <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-          <Text className="text-2xl font-bold text-blue-600">24</Text>
-          <Text className="text-gray-600 text-sm text-center">Hotels</Text>
+          <Text className="text-2xl font-bold text-blue-600">
+            {analytics?.summary?.events?.today || 0}
+          </Text>
+          <Text className="text-gray-600 text-sm text-center">Events (24h)</Text>
         </View>
         <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-          <Text className="text-2xl font-bold text-green-500">142</Text>
-          <Text className="text-gray-600 text-sm text-center">Rooms</Text>
+          <Text className="text-2xl font-bold text-red-500">
+            {analytics?.summary?.errors?.today || 0}
+          </Text>
+          <Text className="text-gray-600 text-sm text-center">Errors (24h)</Text>
         </View>
         <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
-          <Text className="text-2xl font-bold text-purple-500">89</Text>
+          <Text className="text-2xl font-bold text-purple-500">
+            {analytics?.bookingAnalytics?.totalBookings || 0}
+          </Text>
           <Text className="text-gray-600 text-sm text-center">Bookings</Text>
         </View>
       </View>

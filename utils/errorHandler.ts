@@ -2,6 +2,8 @@
 // Utility functions for handling and displaying errors
 
 import { Alert } from 'react-native';
+import { analyticsService } from '@/services/analyticsService';
+import { useUser } from '@/context/UserContext';
 
 // Custom error types
 export class NetworkError extends Error {
@@ -26,8 +28,22 @@ export class AuthenticationError extends Error {
 }
 
 // Handle errors and display user-friendly messages
-export const handleApiError = (error: any, operation: string = 'operation'): void => {
+export const handleApiError = (error: any, operation: string = 'operation', userId?: string): void => {
   console.error(`${operation} error:`, error);
+  
+  // Log error to analytics
+  analyticsService.logError({
+    error: error.name || 'UnknownError',
+    message: error.message || 'An unknown error occurred',
+    stack: error.stack,
+    component: operation,
+    userId,
+    severity: getErrorSeverity(error),
+    metadata: {
+      operation,
+      timestamp: new Date().toISOString()
+    }
+  });
   
   let title = 'Error';
   let message = 'An unexpected error occurred. Please try again.';
@@ -58,14 +74,36 @@ export const handleApiError = (error: any, operation: string = 'operation'): voi
 };
 
 // Handle multiple validation errors
-export const handleValidationErrors = (errors: { field: string; message: string }[]): void => {
+export const handleValidationErrors = (errors: { field: string; message: string }[], userId?: string): void => {
   if (errors.length > 0) {
+    // Log validation error to analytics
+    analyticsService.logError({
+      error: 'ValidationError',
+      message: errors[0].message,
+      component: 'FormValidation',
+      userId,
+      severity: 'medium',
+      metadata: {
+        field: errors[0].field,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
     Alert.alert('Validation Error', errors[0].message);
   }
 };
 
 // Display a success message
-export const showSuccessMessage = (message: string): void => {
+export const showSuccessMessage = (message: string, userId?: string): void => {
+  // Track success events
+  analyticsService.trackEvent({
+    event: 'success_message',
+    category: 'ui',
+    action: 'displayed',
+    label: message,
+    userId
+  });
+  
   Alert.alert('Success', message);
 };
 
@@ -74,8 +112,18 @@ export const showConfirmation = (
   title: string, 
   message: string, 
   onConfirm: () => void,
-  onCancel?: () => void
+  onCancel?: () => void,
+  userId?: string
 ): void => {
+  // Track confirmation dialog events
+  analyticsService.trackEvent({
+    event: 'confirmation_dialog',
+    category: 'ui',
+    action: 'displayed',
+    label: title,
+    userId
+  });
+  
   Alert.alert(
     title,
     message,
@@ -83,13 +131,41 @@ export const showConfirmation = (
       {
         text: 'Cancel',
         style: 'cancel',
-        onPress: onCancel
+        onPress: () => {
+          analyticsService.trackEvent({
+            event: 'confirmation_dialog_cancelled',
+            category: 'ui',
+            action: 'cancelled',
+            label: title,
+            userId
+          });
+          onCancel?.();
+        }
       },
       {
         text: 'Confirm',
         style: 'destructive',
-        onPress: onConfirm
+        onPress: () => {
+          analyticsService.trackEvent({
+            event: 'confirmation_dialog_confirmed',
+            category: 'ui',
+            action: 'confirmed',
+            label: title,
+            userId
+          });
+          onConfirm();
+        }
       }
     ]
   );
+};
+
+// Get error severity based on error type
+const getErrorSeverity = (error: any): 'low' | 'medium' | 'high' | 'critical' => {
+  if (error.name === 'NetworkError') return 'high';
+  if (error.name === 'AuthenticationError') return 'high';
+  if (error.code === '42501') return 'high'; // Access denied
+  if (error.code === '23505') return 'medium'; // Duplicate entry
+  if (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')) return 'high';
+  return 'medium';
 };

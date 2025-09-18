@@ -46,7 +46,7 @@ export default function AdminGuard({ children, requireSuperAdmin = false }: Admi
     );
   }
   
-  // If not authenticated and trying to access protected admin routes, don't render children
+  // If not authenticated and trying to access protected admin routes, do not render children
   if (!admin && isAdminRoute && segments[1] !== 'login') {
     return (
       <View className="flex-1 justify-center items-center bg-white">
@@ -62,7 +62,7 @@ export default function AdminGuard({ children, requireSuperAdmin = false }: Admi
         <Text className="text-6xl mb-4">🚫</Text>
         <Text className="text-red-500 text-xl font-semibold mb-2">Access Denied</Text>
         <Text className="text-gray-500 text-center">
-          You don't have permission to access this page. Only super administrators can access this section.
+          You do not have permission to access this page. Only super administrators can access this section.
         </Text>
         <TouchableOpacity 
           onPress={() => router.replace('/admin/dashboard')}

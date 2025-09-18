@@ -98,12 +98,7 @@ export default function LoginScreen() {
         </View>
         
         {/* Signup Link */}
-        <View className="flex-row justify-center items-center mb-6">
-          <Text className="text-gray-600">Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/signup')}>
-            <Text className="text-blue-500 font-semibold">Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+                        <Text className="text-gray-600 text-center">Don&apos;t have an account? Sign up</Text>
         
         {/* Continue as Guest */}
         <View className="mb-8">

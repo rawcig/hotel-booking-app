@@ -1,6 +1,7 @@
 // api/services/bookings.ts
 import { supabase, Booking } from '@/lib/supabase';
 import { HotelServiceError } from './hotels';
+import { analyticsService } from '@/services/analyticsService';
 
 export interface CreateBookingRequest {
   hotel_id: number;
@@ -44,6 +45,19 @@ export const bookingsService = {
   // Create a new booking
   createBooking: async (data: CreateBookingRequest): Promise<Booking> => {
     try {
+      // Track booking creation attempt
+      analyticsService.trackEvent({
+        event: 'booking_creation_attempt',
+        category: 'booking',
+        action: 'attempt',
+        userId: data.user_id,
+        metadata: {
+          hotel_id: data.hotel_id,
+          guests: data.guests,
+          rooms: data.rooms
+        }
+      });
+      
       // If this is a guest booking (user_id starts with 'guest-'), 
       // we should also create a guest record
       let guestId = null;
@@ -91,8 +105,33 @@ export const bookingsService = {
         }
       }
       
+      // Track successful booking creation
+      analyticsService.trackEvent({
+        event: 'booking_created',
+        category: 'booking',
+        action: 'created',
+        userId: data.user_id,
+        metadata: {
+          booking_id: booking.id,
+          hotel_id: data.hotel_id,
+          total_price: data.total_price
+        }
+      });
+      
       return booking as Booking;
     } catch (error) {
+      // Log error to analytics
+      analyticsService.logError({
+        error: error instanceof BookingServiceError ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        component: 'bookingsService.createBooking',
+        userId: data.user_id,
+        severity: 'high',
+        metadata: {
+          hotel_id: data.hotel_id
+        }
+      });
+      
       // Re-throw our custom errors, or wrap unexpected errors
       if (error instanceof BookingServiceError) {
         throw error;
@@ -194,6 +233,16 @@ export const bookingsService = {
     try {
       console.log('Attempting to cancel booking with ID:', id);
       
+      // Track booking cancellation attempt
+      analyticsService.trackEvent({
+        event: 'booking_cancellation_attempt',
+        category: 'booking',
+        action: 'attempt',
+        metadata: {
+          booking_id: id
+        }
+      });
+      
       // First, verify the booking exists and belongs to the user
       const { data: existingBooking, error: fetchError } = await supabase
         .from('bookings')
@@ -236,9 +285,30 @@ export const bookingsService = {
         console.error('No data returned when cancelling booking with ID:', id);
         throw new BookingServiceError('Booking cancellation failed - no data returned', 'NO_DATA');
       }
+      
+      // Track successful booking cancellation
+      analyticsService.trackEvent({
+        event: 'booking_cancelled',
+        category: 'booking',
+        action: 'cancelled',
+        metadata: {
+          booking_id: id
+        }
+      });
 
       return data as Booking;
     } catch (error) {
+      // Log error to analytics
+      analyticsService.logError({
+        error: error instanceof BookingServiceError ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        component: 'bookingsService.cancelBooking',
+        severity: 'medium',
+        metadata: {
+          booking_id: id
+        }
+      });
+      
       if (error instanceof BookingServiceError) {
         throw error;
       } else {
