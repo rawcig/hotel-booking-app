@@ -2,6 +2,7 @@
 import { supabase, Booking } from '@/lib/supabase';
 import { HotelServiceError } from './hotels';
 import { analyticsService } from '@/services/analyticsService';
+import NotificationService from '@/services/NotificationService';
 
 export interface CreateBookingRequest {
   hotel_id: number;
@@ -117,6 +118,30 @@ export const bookingsService = {
           total_price: data.total_price
         }
       });
+      
+      // Send push notification for booking confirmation
+      try {
+        await NotificationService.sendBookingConfirmation(
+          data.hotel_name,
+          data.check_in,
+          data.check_out,
+          booking.id,
+          data.total_price
+        );
+      } catch (notificationError) {
+        console.error('Failed to send booking confirmation notification:', notificationError);
+        // Log notification error but don't fail the booking
+        analyticsService.logError({
+          error: 'NotificationError',
+          message: `Failed to send booking confirmation: ${notificationError instanceof Error ? notificationError.message : 'Unknown error'}`,
+          component: 'bookingsService.createBooking',
+          userId: data.user_id,
+          severity: 'medium',
+          metadata: {
+            booking_id: booking.id
+          }
+        });
+      }
       
       return booking as Booking;
     } catch (error) {
@@ -295,6 +320,27 @@ export const bookingsService = {
           booking_id: id
         }
       });
+
+      // Send push notification for booking cancellation
+      try {
+        await NotificationService.sendBookingCancellation(
+          data.hotel_name,
+          data.check_in,
+          data.id
+        );
+      } catch (notificationError) {
+        console.error('Failed to send booking cancellation notification:', notificationError);
+        // Log notification error but don't fail the cancellation
+        analyticsService.logError({
+          error: 'NotificationError',
+          message: `Failed to send booking cancellation: ${notificationError instanceof Error ? notificationError.message : 'Unknown error'}`,
+          component: 'bookingsService.cancelBooking',
+          severity: 'medium',
+          metadata: {
+            booking_id: data.id
+          }
+        });
+      }
 
       return data as Booking;
     } catch (error) {

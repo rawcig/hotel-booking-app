@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import NotificationService from '@/services/NotificationService';
+import DatabaseNotificationService from '@/services/DatabaseNotificationService';
 import * as Notifications from 'expo-notifications';
 
 // Define context type
@@ -12,6 +13,7 @@ interface NotificationContextType {
   hasPermission: boolean;
   requestPermission: () => Promise<boolean>;
   sendTestNotification: () => Promise<void>;
+  processDatabaseNotifications: () => Promise<void>;
 }
 
 // Create context
@@ -50,6 +52,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     );
   };
 
+  // Process database notifications
+  const processDatabaseNotifications = async () => {
+    await DatabaseNotificationService.processPendingNotifications();
+  };
+
   // Set up notification listeners
   useEffect(() => {
     // Set up notification listeners
@@ -62,6 +69,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         console.log('User tapped notification:', response);
       }
     );
+
+    // Start periodic database notification processing
+    DatabaseNotificationService.startPeriodicProcessing(60000); // Process every minute
 
     // Clean up listeners on unmount
     return () => {
@@ -82,6 +92,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         hasPermission,
         requestPermission,
         sendTestNotification,
+        processDatabaseNotifications,
       }}
     >
       {children}
