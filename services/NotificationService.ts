@@ -135,10 +135,11 @@ class NotificationService {
     hotelName: string,
     checkInDate: string,
     checkOutDate: string,
-    bookingId: number
+    bookingId: number,
+    totalPrice: string
   ) {
     const title = 'Booking Confirmed!';
-    const body = `Your stay at ${hotelName} from ${checkInDate} to ${checkOutDate} is confirmed. Booking ID: ${bookingId}`;
+    const body = `Your stay at ${hotelName} from ${checkInDate} to ${checkOutDate} is confirmed. Total: ${totalPrice}. Booking ID: ${bookingId}`;
     
     return this.sendImmediateNotification(title, body);
   }
@@ -172,6 +173,66 @@ class NotificationService {
     const body = `${offerTitle} - ${discount} off! Offer expires ${expirationDate}`;
     
     return this.sendImmediateNotification(title, body);
+  }
+
+  // Send a booking cancellation notification
+  async sendBookingCancellation(
+    hotelName: string,
+    checkInDate: string,
+    bookingId: number
+  ) {
+    const title = 'Booking Cancelled';
+    const body = `Your booking at ${hotelName} for ${checkInDate} has been successfully cancelled. Booking ID: ${bookingId}`;
+    
+    return this.sendImmediateNotification(title, body);
+  }
+
+  // Send a payment confirmation notification
+  async sendPaymentConfirmation(
+    hotelName: string,
+    amount: string,
+    paymentMethod: string
+  ) {
+    const title = 'Payment Confirmed';
+    const body = `Your payment of ${amount} for ${hotelName} using ${paymentMethod} has been processed successfully.`;
+    
+    return this.sendImmediateNotification(title, body);
+  }
+
+  // Schedule a check-in reminder 24 hours before check-in
+  async scheduleCheckInReminder(
+    hotelName: string,
+    checkInDate: string,
+    bookingId: number
+  ) {
+    const title = 'Check-in Tomorrow';
+    const body = `Don't forget! Your check-in at ${hotelName} is tomorrow. We look forward to welcoming you!`;
+    
+    // Parse check-in date and schedule for 24 hours before
+    const checkIn = new Date(checkInDate);
+    const reminderDate = new Date(checkIn.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
+    
+    return this.scheduleNotification(title, body, {
+      date: reminderDate,
+    });
+  }
+
+  // Schedule a check-out reminder
+  async scheduleCheckOutReminder(
+    hotelName: string,
+    checkOutDate: string,
+    bookingId: number
+  ) {
+    const title = 'Check-out Reminder';
+    const body = `Your stay at ${hotelName} ends today. Please check out by 12:00 PM. Thank you for choosing us!`;
+    
+    // Parse check-out date and schedule for morning of check-out
+    const checkOut = new Date(checkOutDate);
+    checkOut.setHours(9, 0, 0, 0); // 9:00 AM
+    
+    return this.scheduleNotification(title, body, {
+      date: checkOut,
+    });
   }
 
   // Set up notification listeners

@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS public.users (
 );
 
 -- Create trigger to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Use a unique function name to avoid conflicts
+CREATE OR REPLACE FUNCTION update_users_updated_at_column()
 RETURNS TRIGGER AS $
 BEGIN
     NEW.updated_at = NOW();
@@ -23,7 +24,7 @@ $ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at 
     BEFORE UPDATE ON public.users 
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_users_updated_at_column();
 
 -- Enable RLS (Row Level Security)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;

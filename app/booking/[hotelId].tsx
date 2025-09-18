@@ -9,6 +9,7 @@ import { useUser } from '@/context/UserContext';
 import { validateBookingForm, sanitizeName, sanitizeEmail, sanitizePhone, sanitizeInput } from '@/utils/validation';
 import NotificationService from '@/services/NotificationService';
 import { bookingsService } from '@/api/services/bookings';
+import { paymentProcessingService, PaymentResult } from '@/api/services/paymentProcessing';
 
 export default function BookingForm() {
   const { hotelId } = useLocalSearchParams();
@@ -147,6 +148,51 @@ export default function BookingForm() {
     }
     
     try {
+      // Process payment first
+      let paymentResult: PaymentResult | null = null;
+      
+      if (selectedPaymentMethod === 'card' && paymentConfirmed) {
+        // Process credit card payment
+        paymentResult = await paymentProcessingService.processCreditCardPayment({
+          cardNumber,
+          expiryDate,
+          cvc,
+          amount: calculateTotal(),
+          currency: 'USD',
+          description: `Booking at ${hotel?.name}`
+        });
+        
+        if (!paymentResult.success) {
+          Alert.alert('Payment Failed', paymentResult.message);
+          return;
+        }
+      } else if (selectedPaymentMethod === 'paypal') {
+        // Process PayPal payment
+        paymentResult = await paymentProcessingService.processPayPalPayment(
+          calculateTotal(),
+          'USD'
+        );
+        
+        if (!paymentResult.success) {
+          Alert.alert('Payment Failed', paymentResult.message);
+          return;
+        }
+      } else if (selectedPaymentMethod === 'cash') {
+        // Process cash payment
+        paymentResult = await paymentProcessingService.processCashPayment(
+          calculateTotal(),
+          'USD'
+        );
+        
+        if (!paymentResult.success) {
+          Alert.alert('Payment Selection Failed', paymentResult.message);
+          return;
+        }
+      } else {
+        Alert.alert('Payment Required', 'Please select and confirm a payment method');
+        return;
+      }
+      
       // Sanitize inputs before sending to backend
       const sanitizedGuestName = sanitizeName(guestName);
       const sanitizedGuestEmail = sanitizeEmail(guestEmail);
@@ -154,7 +200,7 @@ export default function BookingForm() {
       
       // Create booking object for the service
       const bookingData = {
-        hotel_id: hotel.id,
+        hotel_id: hotel?.id,
         user_id: user?.id || `guest-${Date.now()}`, // Use actual user ID from context or guest ID
         check_in: formatDate(checkInDate),
         check_out: formatDate(checkOutDate),
@@ -165,9 +211,9 @@ export default function BookingForm() {
         guest_phone: sanitizedGuestPhone,
         total_price: calculateTotal().toString(),
         status: 'confirmed',
-        hotel_name: sanitizeInput(hotel.name),
-        location: sanitizeInput(hotel.location),
-        image: hotel.image
+        hotel_name: sanitizeInput(hotel?.name || ''),
+        location: sanitizeInput(hotel?.location || ''),
+        image: hotel?.image || ''
       };
 
       try {
@@ -176,7 +222,7 @@ export default function BookingForm() {
 
         Alert.alert(
           'Booking Confirmed!', 
-          `Your booking at ${hotel.name} has been confirmed.`,
+          `Your booking at ${hotel?.name} has been confirmed. Transaction ID: ${paymentResult.transactionId}`,
           [
             {
               text: 'View Bookings',
@@ -191,10 +237,11 @@ export default function BookingForm() {
         
         // Send booking confirmation notification
         await NotificationService.sendBookingConfirmation(
-          hotel.name,
+          hotel?.name || '',
           formatDate(checkInDate),
           formatDate(checkOutDate),
-          bookingResult.id
+          bookingResult.id,
+          calculateTotal().toString()
         );
       } catch (error: any) {
         console.error('Booking save error:', error);
