@@ -1,0 +1,27 @@
+# Protected files that should not be modified
+DATABASE_SCHEMA.md
+ADMIN_DASHBOARD_SUMMARY.md
+ANALYTICS_IMPLEMENTATION_SUMMARY.md
+
+# Backup files
+*.backup.*
+*.bak
+*.old
+
+# Environment files (should be in .env)
+.env.local
+.env.development
+.env.production
+
+# Build artifacts
+build/
+dist/
+web-build/
+
+# Logs
+*.log
+
+# IDE files
+*.swp
+*.swo
+*.tmp
