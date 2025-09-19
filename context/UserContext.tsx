@@ -1,9 +1,9 @@
 // context/UserContext.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
 import { authService } from '@/api/services/auth';
+import { supabase } from '@/lib/supabase';
 import { analyticsService } from '@/services/analyticsService';
+import { Session } from '@supabase/supabase-js';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface User {
   id: string;
@@ -21,6 +21,7 @@ interface UserContextType {
   signup: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  createGuestSession: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -30,73 +31,39 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const createGuestSession = async () => {
+    const guestId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const guestUser: User = {
+      id: guestId,
+      email: 'guest@example.com',
+      name: 'Guest User'
+    };
+    setUser(guestUser);
+    setSession(null);
+  };
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        
-        if (currentSession) {
-          // Try to get user profile from users table
-          try {
-            const { data: profile, error } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', currentSession.user.id)
-              .single();
-            
-            if (!error && profile) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                name: profile.name,
-                phone: profile.phone,
-                created_at: profile.created_at
-              });
-              
-              // Track user login
-              analyticsService.trackEvent({
-                event: 'user_login',
-                category: 'auth',
-                action: 'login',
-                userId: profile.id
-              });
-            } else {
-              // Fallback to basic auth data
-              setUser({
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: currentSession.user.user_metadata?.full_name || currentSession.user.email || 'User'
-              });
-              
-              // Track user login
-              analyticsService.trackEvent({
-                event: 'user_login',
-                category: 'auth',
-                action: 'login',
-                userId: currentSession.user.id
-              });
+        const result = await authService.getCurrentUser();
+        if (result) {
+          setUser({
+            id: result.user.id,
+            email: result.user.email,
+            name: result.user.name,
+            phone: result.user.phone,
+          });
+          setSession({
+            access_token: result.token,
+            user: {
+              id: result.user.id,
+              email: result.user.email,
+              user_metadata: {
+                name: result.user.name,
+                phone: result.user.phone,
+              }
             }
-          } catch (error) {
-            if (error instanceof Error && (error.message.includes('not find') || error.message.includes('relation') || error.message.includes('users'))) {
-              console.warn('Users table not found. Using basic auth data.');
-              setUser({
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: currentSession.user.user_metadata?.full_name || currentSession.user.email || 'User'
-              });
-              
-              // Track user login
-              analyticsService.trackEvent({
-                event: 'user_login',
-                category: 'auth',
-                action: 'login',
-                userId: currentSession.user.id
-              });
-            } else {
-              throw error;
-            }
-          }
+          } as Session);
         } else {
           // Create guest session
           const guestId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -123,50 +90,66 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       
       if (session) {
-        // Try to get user profile from users table
-        supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile, error }) => {
-            if (!error && profile) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                name: profile.name,
-                phone: profile.phone,
-                created_at: profile.created_at
-              });
-              
-              // Track user login
-              analyticsService.trackEvent({
-                event: 'user_login',
-                category: 'auth',
-                action: 'login',
-                userId: profile.id
-              });
-            } else {
-              // Fallback to basic auth data
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                name: session.user.user_metadata?.full_name || session.user.email || 'User'
-              });
-              
-              // Track user login
-              analyticsService.trackEvent({
-                event: 'user_login',
-                category: 'auth',
-                action: 'login',
-                userId: session.user.id
-              });
-            }
+        try {
+          // Try to get user profile from users table
+          const { data: profile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (!error && profile) {
+            setUser({
+              id: profile.id,
+              email: profile.email,
+              name: profile.name,
+              phone: profile.phone,
+              created_at: profile.created_at
+            });
+            
+            // Track user login
+            analyticsService.trackEvent({
+              event: 'user_login',
+              category: 'auth',
+              action: 'login',
+              userId: profile.id
+            });
+          } else {
+            // Fallback to basic auth data
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || session.user.email || 'User'
+            });
+            
+            // Track user login
+            analyticsService.trackEvent({
+              event: 'user_login',
+              category: 'auth',
+              action: 'login',
+              userId: session.user.id
+            });
+          }
+        } catch (error) {
+          // Fallback to basic auth data
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.email || 'User'
           });
+          
+          // Track user login
+          analyticsService.trackEvent({
+            event: 'user_login',
+            category: 'auth',
+            action: 'login',
+            userId: session.user.id
+          });
+        }
       } else {
         // User logged out
         setUser(null);
@@ -181,41 +164,28 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const result = await authService.login(email, password);
+      const result = await authService.login({ email, password });
       
-      if (result.success) {
-        // Track successful login
-        analyticsService.trackEvent({
-          event: 'login_success',
-          category: 'auth',
-          action: 'success',
-          metadata: {
-            email: email
-          }
-        });
-      } else {
-        // Track failed login
-        analyticsService.logError({
-          error: 'LoginFailed',
-          message: result.error || 'Login failed',
-          component: 'UserContext.login',
-          severity: 'medium',
-          metadata: {
-            email: email
-          }
-        });
-      }
+      // Track successful login
+      analyticsService.trackEvent({
+        event: 'login_success',
+        category: 'auth',
+        action: 'success',
+        metadata: {
+          email: email
+        }
+      });
       
-      return result;
+      return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
       
-      // Track login error
+      // Track failed login
       analyticsService.logError({
-        error: 'LoginError',
-        message: error.message || 'Unknown login error',
+        error: 'LoginFailed',
+        message: error.message || 'Login failed',
         component: 'UserContext.login',
-        severity: 'high',
+        severity: 'medium',
         metadata: {
           email: email
         }
@@ -232,9 +202,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       console.log('UserContext signup called with:', { name, email, password: password.length, phone });
       setIsLoading(true);
       
-      const result = await authService.signup({ name, email, password, phone });
-      console.log('UserContext signup successful');
-      
       // Track signup attempt
       analyticsService.trackEvent({
         event: 'signup_attempt',
@@ -246,32 +213,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
       });
       
-      if (result.success) {
-        // Track successful signup
-        analyticsService.trackEvent({
-          event: 'signup_success',
-          category: 'auth',
-          action: 'success',
-          metadata: {
-            email: email,
-            name: name
-          }
-        });
-      } else {
-        // Track failed signup
-        analyticsService.logError({
-          error: 'SignupFailed',
-          message: result.error || 'Signup failed',
-          component: 'UserContext.signup',
-          severity: 'medium',
-          metadata: {
-            email: email,
-            name: name
-          }
-        });
-      }
+      const result = await authService.signup({ name, email, password, phone });
+      console.log('UserContext signup successful');
       
-      return result;
+      // Track successful signup
+      analyticsService.trackEvent({
+        event: 'signup_success',
+        category: 'auth',
+        action: 'success',
+        metadata: {
+          email: email,
+          name: name
+        }
+      });
+      
+      return { success: true };
     } catch (error: any) {
       console.error('UserContext signup error:', error);
       console.error('Error name:', error.name);
@@ -349,7 +305,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, session, isLoading, login, signup, logout, refreshUser }}>
+    <UserContext.Provider value={{ user, session, isLoading, login, signup, logout, refreshUser, createGuestSession }}>
       {children}
     </UserContext.Provider>
   );

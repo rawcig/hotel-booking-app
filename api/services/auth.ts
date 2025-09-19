@@ -35,12 +35,14 @@ export class AuthServiceError extends Error {
 export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     try {
+      // Attempt login
       const { data: session, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
       
       if (error) {
+        console.log('Supabase login error:', error);
         // Handle specific Supabase auth errors
         if (error.status === 400) {
           throw new AuthServiceError('Invalid email or password', 'INVALID_CREDENTIALS');
@@ -71,20 +73,22 @@ export const authService = {
         
         if (!profileError) {
           userProfile = profile;
+        } else {
+          console.log('Profile fetch error:', profileError);
         }
       } catch (profileError) {
         // If users table doesn't exist, continue with basic data
         if (profileError instanceof Error && (profileError.message.includes('not find') || profileError.message.includes('relation') || profileError.message.includes('users'))) {
           console.warn('Users table not found. Using basic auth data.');
         } else {
-          throw profileError;
+          console.log('Profile error:', profileError);
         }
       }
       
       return {
         user: {
           id: session.user.id,
-          name: userProfile?.name || session.user.user_metadata?.name || session.user.email || '',
+          name: userProfile?.name || session.user.user_metadata?.full_name || session.user.email || '',
           email: session.user.email || '',
           phone: userProfile?.phone || session.user.user_metadata?.phone || null,
           role: userProfile?.role?.name || 'user',
@@ -92,6 +96,7 @@ export const authService = {
         token: session.session?.access_token || '',
       };
     } catch (error) {
+      console.log('Login error:', error);
       // Re-throw our custom errors, or wrap unexpected errors
       if (error instanceof AuthServiceError) {
         throw error;
@@ -141,15 +146,13 @@ export const authService = {
       try {
         const { data: profile, error: profileError } = await supabase
           .from('users')
-          .insert([
-            {
-              id: authData.user.id,
-              name: data.name,
-              email: data.email,
-              phone: data.phone || null,
-              role_id: 2, // Default to 'user' role
-            },
-          ])
+          .insert([{
+            id: authData.user.id,
+            name: data.name,
+            email: data.email,
+            phone: data.phone || null,
+            role_id: 2, // Default to 'user' role
+          }])
           .select(`
             *,
             role:user_roles(name, description)
@@ -162,7 +165,8 @@ export const authService = {
             console.warn('Users table not found. User profile not created. Please run setup-users-table.sql');
             // Continue with basic user data
           } else {
-            throw profileError;
+            console.log('Profile insert error (non-critical):', profileError);
+            // Continue with basic user data - this is not a critical error for signup
           }
         }
       } catch (profileError) {
@@ -171,8 +175,9 @@ export const authService = {
           console.warn('Users table not found. User profile not created. Please run setup-users-table.sql');
           // Continue with basic user data
         } else {
-          throw profileError;
-          }
+          console.log('Profile error (non-critical):', profileError);
+          // Continue with basic user data - this is not a critical error for signup
+        }
       }
       
       return {
@@ -186,6 +191,7 @@ export const authService = {
         token: authData.session?.access_token || '',
       };
     } catch (error) {
+      console.log('Signup error:', error);
       // Re-throw our custom errors, or wrap unexpected errors
       if (error instanceof AuthServiceError) {
         throw error;

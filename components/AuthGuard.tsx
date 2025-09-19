@@ -1,8 +1,8 @@
 // components/AuthGuard.tsx
-import React, { useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useRouter, useSegments } from 'expo-router';
-import { ActivityIndicator, View, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 interface AuthGuardProps {
   children: React.ReactNode;
