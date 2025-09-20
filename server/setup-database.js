@@ -25,9 +25,6 @@ async function setupDatabase() {
     
     console.log('\n=== Database Setup Complete ===');
     console.log('✅ Database is ready for use!');
-    console.log('\nDefault admin credentials:');
-    console.log('  Email: admin@example.com');
-    console.log('  Password: admin123');
     console.log('\nStorage setup:');
     console.log('  Create a "hotel-images" bucket in your Supabase Storage dashboard');
     console.log('\nYou can now log in to the admin panel.');

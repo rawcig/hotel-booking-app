@@ -39,10 +39,43 @@ router.get('/dashboard/stats', async (req, res) => {
       });
     }
 
+    // Get total revenue (sum of total_price from completed bookings)
+    const { data: revenueData, error: revenueError } = await supabase
+      .from('bookings')
+      .select('total_price, status');
+
+    let totalRevenue = 0;
+    let pendingRevenue = 0;
+    
+    if (revenueData) {
+      // Calculate total revenue from completed bookings
+      totalRevenue = revenueData
+        .filter(booking => booking.status === 'completed')
+        .reduce((sum, booking) => sum + (parseFloat(booking.total_price) || 0), 0);
+      
+      // Calculate pending revenue from confirmed/pending bookings
+      pendingRevenue = revenueData
+        .filter(booking => booking.status === 'confirmed' || booking.status === 'pending')
+        .reduce((sum, booking) => sum + (parseFloat(booking.total_price) || 0), 0);
+    }
+
+    if (revenueError) {
+      console.warn('Warning: Error fetching revenue data:', revenueError.message);
+    }
+
     // Get recent bookings (last 5)
     const { data: recentBookings, error: recentBookingsError } = await supabase
       .from('bookings')
-      .select('*')
+      .select(`
+        id,
+        hotel_name,
+        guest_name,
+        check_in,
+        check_out,
+        total_price,
+        status,
+        created_at
+      `)
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -58,7 +91,9 @@ router.get('/dashboard/stats', async (req, res) => {
       success: true,
       stats: {
         hotels: hotelsCount || 0,
-        bookings: bookingsCount || 0
+        bookings: bookingsCount || 0,
+        totalRevenue: totalRevenue || 0,
+        pendingRevenue: pendingRevenue || 0
       },
       recentBookings: recentBookings || []
     });

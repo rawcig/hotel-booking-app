@@ -8,6 +8,7 @@ A modern hotel booking application built with React Native and Expo, featuring:
 - 📱 Native mobile experience
 - ☁️ Supabase backend integration
 - 🎨 Beautiful UI with NativeWind (Tailwind CSS for React Native)
+- 📊 Financial reporting and analytics
 
 ## Features
 
@@ -31,6 +32,13 @@ A modern hotel booking application built with React Native and Expo, featuring:
 - Notification preferences
 - App settings
 
+### 📊 Financial Management & Reporting
+- Financial summary dashboard with revenue metrics
+- Detailed financial reports by hotel and time period
+- Payment methods breakdown
+- Revenue trend visualization
+- Hotel performance analytics
+
 ### 📱 User Experience
 - Smooth navigation with tab-based interface
 - Pull-to-refresh functionality
@@ -44,7 +52,7 @@ A modern hotel booking application built with React Native and Expo, featuring:
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **State Management**: React Query for data fetching
 - **Navigation**: Expo Router
-- **Backend**: Supabase (Database, Authentication, Storage)
+- **Backend**: Supabase (Database, Authentication, Storage) or Node.js/Express Server
 - **Local Storage**: AsyncStorage
 - **UI Components**: React Native built-in components
 
@@ -69,6 +77,7 @@ A modern hotel booking application built with React Native and Expo, featuring:
 ```
 app/                 # Main application screens
 ├── (tabs)/         # Tab navigation screens
+├── admin/          # Admin dashboard and financial reports
 ├── booking/        # Booking flow
 ├── hotels/         # Hotel details
 api/                # API service layer
@@ -78,6 +87,7 @@ hooks/              # Custom React hooks
 lib/                # Supabase integration
 providers/          # React Query provider
 server/             # Node.js/Express backend (separate service)
+services/           # Application services (including financial service)
 ```
 
 ## Supabase Integration
@@ -123,6 +133,23 @@ If you want to use the Node.js/Express server instead of Supabase directly:
 
 Note: The Node.js/Express server should be run separately from the React Native app. It cannot be run within the React Native environment because it uses Node.js built-in modules.
 
+### Financial Reporting API
+
+The Node.js/Express server includes a comprehensive financial reporting API with the following endpoints:
+
+#### Financial Management Routes
+- `GET /api/financial/summary` - Get financial summary including total revenue, pending revenue, and trends
+- `GET /api/financial/report` - Get detailed financial report with filtering options
+- `GET /api/financial/payment-methods` - Get payment methods breakdown
+
+#### Reporting Routes
+- `GET /api/reports/bookings` - Get bookings report with filtering
+- `GET /api/reports/hotels` - Get hotels report
+- `GET /api/reports/users` - Get users report
+- `GET /api/reports/revenue` - Get revenue report with time-based grouping
+
+All financial endpoints include comprehensive error handling and input validation. See `TESTING_FINANCIAL_ENDPOINTS.md` for detailed testing instructions.
+
 ## Future Enhancements
 
 - [ ] User authentication system
@@ -133,6 +160,8 @@ Note: The Node.js/Express server should be run separately from the React Native 
 - [ ] Map integration
 - [ ] Social sharing features
 - [ ] Multi-language support
+- [ ] Export reports to PDF/CSV
+- [ ] Advanced financial analytics
 
 ## Contributing
 

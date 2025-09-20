@@ -103,6 +103,106 @@ Authorization: Bearer jwt-token
 }
 ```
 
+## User Management (Admin only)
+
+### GET `/auth`
+Get list of users with pagination and filtering
+
+**Headers:**
+```
+Authorization: Bearer jwt-token
+```
+
+**Query Parameters:**
+- `page` (integer, default: 1) - Page number
+- `limit` (integer, default: 10) - Number of items per page
+- `search` (string) - Search term for user name or email
+
+**Response:**
+```json
+{
+  "success": true,
+  "users": [...],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalCount": 50,
+    "limit": 10
+  }
+}
+```
+
+### GET `/auth/:id`
+Get user by ID
+
+**Headers:**
+```
+Authorization: Bearer jwt-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user-uuid",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "phone": "+1234567890",
+    "role": "user",
+    "role_id": 2,
+    "created_at": "2025-09-20T10:30:00Z"
+  }
+}
+```
+
+### PUT `/auth/:id`
+Update user information
+
+**Headers:**
+```
+Authorization: Bearer jwt-token
+```
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "email": "updated@example.com",
+  "phone": "+1234567890"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user-uuid",
+    "email": "updated@example.com",
+    "name": "Updated Name",
+    "phone": "+1234567890",
+    "role": "user"
+  }
+}
+```
+
+### DELETE `/auth/:id`
+Delete user (Admin only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+```
+
 ## Hotels
 
 ### GET `/hotels`

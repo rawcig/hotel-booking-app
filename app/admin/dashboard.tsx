@@ -1,20 +1,42 @@
 // app/admin/dashboard.tsx
 // Admin dashboard screen
 
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAdmin } from '@/context/AdminContext';
 import { images } from '@/constants/images';
+import { financialService, FinancialSummary } from '@/services/financialService';
 
 export default function AdminDashboard() {
   const { admin, logout, isSuperAdmin } = useAdmin();
   const router = useRouter();
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleLogout = async () => {
     await logout();
     router.replace('/admin/login');
   };
+
+  // Fetch financial summary when component mounts
+  useEffect(() => {
+    const fetchFinancialSummary = async () => {
+      try {
+        setLoading(true);
+        const response = await financialService.getFinancialSummary();
+        if (response.success && response.summary) {
+          setFinancialSummary(response.summary);
+        }
+      } catch (error) {
+        console.error('Failed to fetch financial summary:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinancialSummary();
+  }, []);
 
   const menuItems = [
     {
@@ -51,6 +73,14 @@ export default function AdminDashboard() {
       adminOnly: true
     },
     {
+      title: 'Financial Reports',
+      description: 'View financial statistics and reports',
+      icon: '💰',
+      action: () => router.push('/admin/financial'),
+      color: 'bg-green-100',
+      textColor: 'text-green-600'
+    },
+    {
       title: 'Reports',
       description: 'View booking statistics and reports',
       icon: '📊',
@@ -59,6 +89,48 @@ export default function AdminDashboard() {
       textColor: 'text-red-600'
     }
   ];
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Simple revenue trend visualization
+  const RevenueTrend = ({ data }: { data: Record<string, number> }) => {
+    const entries = Object.entries(data);
+    if (entries.length === 0) return null;
+
+    // Get last 3 months for display
+    const lastEntries = entries.slice(-3);
+    const maxAmount = Math.max(...lastEntries.map(([, amount]) => amount), 0);
+
+    return (
+      <View className="mt-3">
+        <Text className="text-gray-600 text-sm mb-2">Recent Trend</Text>
+        <View className="flex-row items-end justify-between">
+          {lastEntries.map(([month, amount], index) => {
+            const height = maxAmount > 0 ? (amount / maxAmount) * 60 : 0;
+            return (
+              <View key={index} className="items-center flex-1">
+                <View
+                  className="bg-green-500 rounded-t-sm w-8"
+                  style={{ height: Math.max(height, 2) }}
+                />
+                <Text className="text-xs text-gray-600 mt-1" numberOfLines={1}>
+                  {month.split('-')[1]}/{month.split('-')[0].slice(2)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <ScrollView className="flex-1 bg-gray-50">
@@ -99,8 +171,46 @@ export default function AdminDashboard() {
         </View>
       </View>
 
+      {/* Financial Stats Cards */}
+      <View className="p-4 -mt-4">
+        <Text className="text-lg font-bold text-gray-800 mb-4">Financial Overview</Text>
+        {loading ? (
+          <View className="bg-white rounded-xl p-6 items-center justify-center">
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text className="text-gray-600 mt-2">Loading financial data...</Text>
+          </View>
+        ) : (
+          <View className="bg-white rounded-xl p-4 shadow-sm">
+            <View className="flex-row justify-between">
+              <View className="flex-1 items-center">
+                <Text className="text-2xl font-bold text-green-600">
+                  {financialSummary ? formatCurrency(financialSummary.totalRevenue) : '$0'}
+                </Text>
+                <Text className="text-gray-600 text-sm text-center">Total Revenue</Text>
+              </View>
+              <View className="flex-1 items-center">
+                <Text className="text-2xl font-bold text-yellow-600">
+                  {financialSummary ? formatCurrency(financialSummary.pendingRevenue) : '$0'}
+                </Text>
+                <Text className="text-gray-600 text-sm text-center">Pending Revenue</Text>
+              </View>
+              <View className="flex-1 items-center">
+                <Text className="text-2xl font-bold text-red-500">
+                  {financialSummary ? formatCurrency(financialSummary.cancelledRevenue) : '$0'}
+                </Text>
+                <Text className="text-gray-600 text-sm text-center">Cancelled</Text>
+              </View>
+            </View>
+            
+            {financialSummary && Object.keys(financialSummary.revenueByMonth).length > 0 && (
+              <RevenueTrend data={financialSummary.revenueByMonth} />
+            )}
+          </View>
+        )}
+      </View>
+
       {/* Stats Cards */}
-      <View className="flex-row p-4 gap-3 -mt-4">
+      <View className="flex-row p-4 gap-3">
         <View className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm">
           <Text className="text-2xl font-bold text-blue-600">24</Text>
           <Text className="text-gray-600 text-sm text-center">Hotels</Text>

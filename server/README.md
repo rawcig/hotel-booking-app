@@ -40,17 +40,52 @@ To enable hotel image uploads, you need to set up a storage bucket in Supabase:
 
 ## API Endpoints
 
+### Authentication
+- `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
-- `POST /api/auth/signup` - User registration
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/profile` - Get current user profile
+- `GET /api/auth` - Get all users (Admin only)
+- `GET /api/auth/:id` - Get user by ID (Admin only)
+- `PUT /api/auth/:id` - Update user (Admin only)
+- `DELETE /api/auth/:id` - Delete user (Admin only)
+
+### Hotels
 - `GET /api/hotels` - Get list of hotels
 - `GET /api/hotels/:id` - Get hotel details
-- `POST /api/hotels` - Create a new hotel
-- `POST /api/hotels/upload-image` - Upload hotel image
-- `PUT /api/hotels/:id` - Update a hotel
-- `DELETE /api/hotels/:id` - Delete a hotel
+- `POST /api/hotels` - Create a new hotel (Admin only)
+- `POST /api/hotels/upload-image` - Upload hotel image (Admin only)
+- `PUT /api/hotels/:id` - Update a hotel (Admin only)
+- `DELETE /api/hotels/:id` - Delete a hotel (Admin only)
+
+### Rooms
+- `GET /api/rooms` - Get list of rooms
+- `GET /api/rooms/:id` - Get room details
+- `POST /api/rooms` - Create a new room (Admin only)
+- `PUT /api/rooms/:id` - Update a room (Admin only)
+
+### Bookings
 - `GET /api/bookings` - Get user bookings
+- `GET /api/bookings/:id` - Get booking details
 - `POST /api/bookings` - Create a new booking
 - `PUT /api/bookings/:id/cancel` - Cancel a booking
+
+### Admin
+- `GET /api/admin/dashboard/stats` - Get dashboard statistics (Admin only)
+- `GET /api/admin/hotels/overview` - Get hotels overview (Admin only)
+- `GET /api/admin/bookings/overview` - Get bookings overview (Admin only)
+- `GET /api/admin/users/overview` - Get users overview (Admin only)
+
+### Financial
+- `GET /api/financial/summary` - Get financial summary (Admin only)
+- `GET /api/financial/report` - Get detailed financial report (Admin only)
+- `GET /api/financial/payment-methods` - Get payment methods breakdown (Admin only)
+
+### Reports
+- `GET /api/reports/bookings` - Get bookings report (Admin only)
+- `GET /api/reports/hotels` - Get hotels report (Admin only)
+- `GET /api/reports/users` - Get users report (Admin only)
+- `GET /api/reports/revenue` - Get revenue report (Admin only)
 
 ## Note
 

@@ -25,6 +25,8 @@ app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/simple-auth', require('./routes/simple-auth'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/financial', require('./routes/financial'));
+app.use('/api/reports', require('./routes/reports'));
 app.use('/api/hotels', require('./routes/hotels'));
 app.use('/api/bookings', require('./routes/bookings'));
 
@@ -68,14 +70,4 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Admin portal available at http://localhost:${PORT}/admin`);
-  
-  // Show default credentials for testing
-  console.log('\n=== Default Test Credentials ===');
-  console.log('Admin Login:');
-  console.log('  Email: admin@example.com');
-  console.log('  Password: (any password will work for testing)');
-  console.log('\nRegular User Login:');
-  console.log('  Email: user@example.com');
-  console.log('  Password: (any password will work for testing)');
-  console.log('===============================\n');
 });

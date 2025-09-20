@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build:css": "npx tailwindcss -i ./admin/CSS/tailwind.css -o ./admin/CSS/tailwind-output.css --watch",
+    "build:css:prod": "npx tailwindcss -i ./admin/CSS/tailwind.css -o ./admin/CSS/tailwind-output.css --minify",
     "test": "jest",
     "test:db": "node test-database.js",
     "setup:db": "node setup-database.js",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "jest": "^29.6.2",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "tailwindcss": "^4.1.13"
   }
 }

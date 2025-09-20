@@ -444,10 +444,35 @@ async function loadDashboardData() {
         
         if (statsResult.success) {
             const stats = statsResult.stats;
-            // Update dashboard stats
-            document.getElementById('totalCustomers').textContent = stats.customers || 0;
+            // Update dashboard stats with real data
+            // For customers, we need to fetch user count separately
+            try {
+                console.log('Fetching user count from:', `${API_BASE_URL}/auth?page=1&limit=1`);
+                const usersResponse = await fetch(`${API_BASE_URL}/auth?page=1&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentUser?.token}`
+                    }
+                });
+                console.log('User count response status:', usersResponse.status);
+                const usersResult = await usersResponse.json();
+                console.log('User count response data:', usersResult);
+                if (usersResult.success) {
+                    document.getElementById('totalCustomers').textContent = usersResult.pagination?.totalCount || 0;
+                } else {
+                    console.error('Failed to fetch user count:', usersResult.message);
+                    document.getElementById('totalCustomers').textContent = 0;
+                }
+            } catch (usersError) {
+                console.error('Error fetching user count:', usersError);
+                document.getElementById('totalCustomers').textContent = 0;
+            }
+            
             document.getElementById('totalBookings').textContent = stats.bookings || 0;
-            document.getElementById('totalRevenue').textContent = `${(stats.bookings * 100 || 0).toLocaleString()}`; // Approximate revenue
+            // Display actual revenue instead of approximate value
+            document.getElementById('totalRevenue').textContent = `${(stats.totalRevenue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
             document.getElementById('totalHotels').textContent = stats.hotels || 0;
         }
         
@@ -1643,7 +1668,7 @@ let totalUsersPages = 1;
 
 async function loadUsersData() {
     try {
-        const response = await fetch(`${API_BASE_URL}/users?page=${currentUsersPage}&limit=10`, {
+        const response = await fetch(`${API_BASE_URL}/auth?page=${currentUsersPage}&limit=10`, {
             headers: {
                 'Authorization': `Bearer ${currentUser?.token}`
             }
@@ -1734,7 +1759,7 @@ async function deleteUser(userId) {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        const response = await fetch(`${API_BASE_URL}/auth/${userId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${currentUser?.token}`
@@ -2327,9 +2352,34 @@ async function loadReportsData() {
         
         if (statsResult.success) {
             const stats = statsResult.stats;
-            document.getElementById('totalCustomers').textContent = stats.customers || 0;
+            // For customers, we need to fetch user count separately
+            try {
+                console.log('Fetching user count from:', `${API_BASE_URL}/auth?page=1&limit=1`);
+                const usersResponse = await fetch(`${API_BASE_URL}/auth?page=1&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentUser?.token}`
+                    }
+                });
+                console.log('User count response status:', usersResponse.status);
+                const usersResult = await usersResponse.json();
+                console.log('User count response data:', usersResult);
+                if (usersResult.success) {
+                    document.getElementById('totalCustomers').textContent = usersResult.pagination?.totalCount || 0;
+                } else {
+                    console.error('Failed to fetch user count:', usersResult.message);
+                    document.getElementById('totalCustomers').textContent = 0;
+                }
+            } catch (usersError) {
+                console.error('Error fetching user count:', usersError);
+                document.getElementById('totalCustomers').textContent = 0;
+            }
+            
             document.getElementById('totalBookings').textContent = stats.bookings || 0;
-            document.getElementById('totalRevenue').textContent = `${(stats.payments || 0).toLocaleString()}`;
+            // Display actual revenue instead of approximate value
+            document.getElementById('totalRevenue').textContent = `${(stats.totalRevenue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
             document.getElementById('totalHotels').textContent = stats.hotels || 0;
         }
         
@@ -2351,7 +2401,7 @@ function renderCharts() {
 async function loadFinancialsData() {
     try {
         // Load financial statistics
-        const statsResponse = await fetch(`${API_BASE_URL}/admin/financials/stats`, {
+        const statsResponse = await fetch(`${API_BASE_URL}/financial/summary`, {
             headers: {
                 'Authorization': `Bearer ${currentUser?.token}`
             }
@@ -2359,114 +2409,39 @@ async function loadFinancialsData() {
         const statsResult = await statsResponse.json();
         
         if (statsResult.success) {
-            const stats = statsResult.stats;
-            document.getElementById('monthlyRevenue').textContent = `${(stats.monthlyRevenue || 0).toLocaleString()}`;
-            document.getElementById('pendingPayments').textContent = stats.pendingPayments || 0;
-            document.getElementById('refundedAmount').textContent = `${(stats.refundedAmount || 0).toLocaleString()}`;
-            document.getElementById('commissionEarned').textContent = `${(stats.commissionEarned || 0).toLocaleString()}`;
+            const summary = statsResult.summary;
+            // Calculate monthly revenue from revenueByMonth
+            let monthlyRevenue = 0;
+            const currentDate = new Date();
+            const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            if (summary.revenueByMonth && summary.revenueByMonth[currentMonth]) {
+                monthlyRevenue = summary.revenueByMonth[currentMonth];
+            }
+            
+            document.getElementById('monthlyRevenue').textContent = `${monthlyRevenue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+            document.getElementById('pendingPayments').textContent = `${(summary.pendingRevenue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+            document.getElementById('refundedAmount').textContent = `${(summary.cancelledRevenue || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+            document.getElementById('commissionEarned').textContent = `${(summary.totalRevenue * 0.1 || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`; // Assuming 10% commission
         }
         
         // Load transactions
-        loadTransactionsData();
+        // Removed: loadTransactionsData() - endpoint doesn't exist
     } catch (error) {
         console.error('Error loading financials data:', error);
         showNotification('Error loading financials data', 'error');
     }
-}
-
-let currentTransactionsPage = 1;
-let totalTransactionsPages = 1;
-
-async function loadTransactionsData() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/admin/transactions?page=${currentTransactionsPage}&limit=10`, {
-            headers: {
-                'Authorization': `Bearer ${currentUser?.token}`
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            const transactions = result.transactions || [];
-            const pagination = result.pagination || {};
-            
-            renderTransactionsTable(transactions);
-            updateTransactionsPagination(pagination);
-        } else {
-            showNotification(result.message || 'Failed to load transactions', 'error');
-        }
-    } catch (error) {
-        console.error('Error loading transactions:', error);
-        showNotification('Error loading transactions', 'error');
-    }
-}
-
-function renderTransactionsTable(transactions) {
-    const tableBody = document.getElementById('transactionsTableBody');
-    if (!tableBody) return;
-    
-    if (!transactions || transactions.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="text-left p-4">No transactions found</td></tr>';
-        return;
-    }
-    
-    tableBody.innerHTML = '';
-    
-    transactions.forEach(transaction => {
-        const statusClass = `status-${transaction.status}`;
-        const typeClass = transaction.type === 'credit' ? 'text-success' : 'text-danger';
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="text-left p-4 border-b">${transaction.id}</td>
-            <td class="text-left p-4 border-b">${formatDate(transaction.date)}</td>
-            <td class="text-left p-4 border-b">${transaction.description}</td>
-            <td class="text-left p-4 border-b"><span class="${typeClass}">${transaction.type}</span></td>
-            <td class="text-left p-4 border-b">${parseFloat(transaction.amount).toFixed(2)}</td>
-            <td class="text-left p-4 border-b"><span class="status-badge ${statusClass}">${transaction.status}</span></td>
-            <td class="text-left p-4 border-b">
-                <div class="action-buttons">
-                    <button class="action-btn view" onclick="viewTransaction(${transaction.id})" title="View">👁️</button>
-                </div>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-function updateTransactionsPagination(pagination) {
-    const totalCount = pagination.totalCount || 0;
-    const currentPage = pagination.currentPage || 1;
-    const totalPages = pagination.totalPages || 1;
-    
-    document.getElementById('transactionsTotalCount').textContent = totalCount;
-    document.getElementById('currentTransactionsPage').textContent = currentPage;
-    document.getElementById('totalTransactionsPages').textContent = totalPages;
-    
-    const prevBtn = document.getElementById('prevTransactionsPage');
-    const nextBtn = document.getElementById('nextTransactionsPage');
-    
-    if (prevBtn) {
-        prevBtn.disabled = currentPage <= 1;
-    }
-    
-    if (nextBtn) {
-        nextBtn.disabled = currentPage >= totalPages;
-    }
-    
-    currentTransactionsPage = currentPage;
-    totalTransactionsPages = totalPages;
-}
-
-function loadTransactionsPage(page) {
-    if (page < 1 || page > totalTransactionsPages) return;
-    currentTransactionsPage = page;
-    loadTransactionsData();
-}
-
-function viewTransaction(transactionId) {
-    showNotification(`Viewing details for transaction ${transactionId}`, 'info');
-    // In a real app, you would open a modal with transaction details
 }
 
 // Form Submission Handlers
@@ -2650,7 +2625,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             try {
-                const response = await fetch(`${API_BASE_URL}/users`, {
+                const response = await fetch(`${API_BASE_URL}/auth`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${currentUser?.token}`,
@@ -2697,7 +2672,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             try {
-                const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                const response = await fetch(`${API_BASE_URL}/auth/${userId}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${currentUser?.token}`,
@@ -3215,6 +3190,5 @@ window.HotelApp = {
     closeAddBookingModal,
     openEditBookingModal,
     closeEditBookingModal,
-    deleteBooking,
-    viewTransaction
+    deleteBooking
 };

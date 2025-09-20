@@ -14,14 +14,14 @@ export default function Profile() {
   const router = useRouter();
   const { user, logout } = useUser();
   const [profileData, setProfileData] = useState({
-    name: user?.name || 'Try Leanghak',
-    email: user?.email || 'hak.goBy@email.com',
+    name: user?.name || 'Guest',
+    email: user?.email || 'guest@account.com',
     phone: user?.phone || '+855 12 345 678',
     avatar: images.userFoto,
     memberSince: '2023',
-    totalBookings: 12,
-    favoriteHotels: 5,
-    loyaltyPoints: 2450,
+    totalBookings: '0',
+    favoriteHotels: '0',
+    loyaltyPoints: '0',
     bio: ''
   });
 

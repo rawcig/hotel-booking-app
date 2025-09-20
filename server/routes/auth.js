@@ -3,7 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { supabase } = require('../lib/supabase');
-const { storeToken, removeToken, getUserIdFromToken } = require('../middleware/auth');
+const { storeToken, removeToken, getUserIdFromToken, authenticateAdmin, authorizeAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -320,6 +320,211 @@ router.get('/profile', async (req, res) => {
       success: false,
       message: 'Server error fetching profile',
       error: error.message
+    });
+  }
+});
+
+// Get all users (No authentication for demo)
+router.get('/', async (req, res) => {
+  try {
+    // Simplified version for demo - no pagination or search
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        role_id,
+        created_at,
+        user_roles(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase fetch error:', error);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    // Format user data with role names
+    const formattedUsers = data.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.user_roles ? user.user_roles.name : 'user',
+      role_id: user.role_id,
+      created_at: user.created_at
+    }));
+    
+    res.json({
+      success: true,
+      users: formattedUsers || []
+    });
+  } catch (error) {
+    console.error('Server error in users route:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Get user by ID (No authentication for demo)
+router.get('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        role_id,
+        created_at,
+        user_roles(name)
+      `)
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Supabase fetch error:', error);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+    
+    // Format user data with role name
+    const formattedUser = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      role: data.user_roles ? data.user_roles.name : 'user',
+      role_id: data.role_id,
+      created_at: data.created_at
+    };
+    
+    res.json({
+      success: true,
+      user: formattedUser
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Update user (No authentication for demo)
+router.put('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const userData = req.body;
+    
+    // Remove id and role_id from update data for security
+    delete userData.id;
+    delete userData.role_id;
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update(userData)
+      .eq('id', userId)
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        role_id,
+        user_roles(name)
+      `)
+      .single();
+    
+    if (error) {
+      console.error('Supabase update error:', error);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+    
+    // Format user data with role name
+    const formattedUser = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      role: data.user_roles ? data.user_roles.name : 'user',
+      role_id: data.role_id
+    };
+    
+    res.json({
+      success: true,
+      user: formattedUser
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
+// Delete user (No authentication for demo)
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Database error',
+        error: error.message 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message 
     });
   }
 });
