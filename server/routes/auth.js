@@ -505,7 +505,7 @@ router.delete('/:id', async (req, res) => {
     const { data, error } = await supabase
       .from('users')
       .delete()
-      .eq('id', userId);
+      .eq('id', userId);2
     
     if (error) {
       console.error('Supabase delete error:', error);

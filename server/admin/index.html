@@ -207,18 +207,7 @@
             <h2 class="text-xl font-semibold">Recent Bookings</h2>
             <div class="flex gap-2">
             <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm">
-              <option>January</option>
-              <option>February</option>
-              <option>March</option>
-              <option>April</option>
-              <option>May</option>
-              <option>June</option>
-              <option>July</option>
-              <option>August</option>
-              <option>September</option>
-              <option>October</option>
-              <option>November</option>
-              <option>December</option>
+              <!-- Options will be populated by JavaScript -->
             </select>
           </div>
           </div>
@@ -596,7 +585,7 @@
               class="stat-icon payments w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-green-400 to-teal-500">
               💰</div>
             <div class="stat-info">
-              <h3 id="monthlyRevenue" class="text-2xl font-bold">$0</h3>
+              <h3 id="monthlyRevenue" class="text-2xl font-bold">0</h3>
               <p class="text-gray-500 text-sm">Monthly Revenue</p>
             </div>
           </div>
@@ -614,7 +603,7 @@
               class="stat-icon customers w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-blue-500 to-purple-600">
               👥</div>
             <div class="stat-info">
-              <h3 id="refundedAmount" class="text-2xl font-bold">$0</h3>
+              <h3 id="refundedAmount" class="text-2xl font-bold">0</h3>
               <p class="text-gray-500 text-sm">Refunded</p>
             </div>
           </div>
@@ -623,9 +612,49 @@
               class="stat-icon rooms w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-yellow-400 to-orange-500">
               🏠</div>
             <div class="stat-info">
-              <h3 id="commissionEarned" class="text-2xl font-bold">$0</h3>
+              <h3 id="commissionEarned" class="text-2xl font-bold">0</h3>
               <p class="text-gray-500 text-sm">Commission</p>
             </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="content-section bg-white rounded-2xl p-6 shadow-md mb-8">
+          <div class="section-header flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">Revenue Overview</h2>
+            <div class="flex gap-2">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="financialMonth">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="financialYear">
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="financialRevenueChart" height="300"></canvas>
+          </div>
+        </div>
+
+        <div class="content-section bg-white rounded-2xl p-6 shadow-md mb-8">
+          <div class="section-header flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">Payment Methods</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="paymentMethodsChart" height="300"></canvas>
           </div>
         </div>
 
@@ -1111,6 +1140,95 @@
 
   <script src="JS/script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Initialize charts after DOM loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set up event listeners for report selectors
+      const revenueMonthSelector = document.getElementById('revenueMonth');
+      const revenueYearSelector = document.getElementById('revenueYear');
+      const bookingMonthSelector = document.getElementById('bookingMonth');
+      const bookingYearSelector = document.getElementById('bookingYear');
+      
+      // Set default values for selectors
+      if (revenueMonthSelector) {
+        revenueMonthSelector.value = new Date().getMonth() + 1;
+      }
+      if (revenueYearSelector) {
+        revenueYearSelector.value = new Date().getFullYear();
+      }
+      if (bookingMonthSelector) {
+        bookingMonthSelector.value = new Date().getMonth() + 1;
+      }
+      if (bookingYearSelector) {
+        bookingYearSelector.value = new Date().getFullYear();
+      }
+      
+      // Initialize charts
+      initializeCharts();
+    });
+    
+    function initializeCharts() {
+      // Revenue chart
+      const revenueCtx = document.getElementById('revenueChart');
+      if (revenueCtx) {
+        new Chart(revenueCtx, {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+              label: 'Revenue',
+              data: [12000, 19000, 15000, 18000, 22000, 19000, 25000, 23000, 21000, 19000, 17000, 22000],
+              borderColor: 'rgb(75, 192, 192)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              title: {
+                display: true,
+                text: 'Monthly Revenue'
+              }
+            }
+          }
+        });
+      }
+      
+      // Booking chart
+      const bookingCtx = document.getElementById('bookingChart');
+      if (bookingCtx) {
+        new Chart(bookingCtx, {
+          type: 'bar',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+              label: 'Bookings',
+              data: [12, 19, 15, 18, 22, 19, 25, 23, 21, 19, 17, 22],
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              title: {
+                display: true,
+                text: 'Monthly Bookings'
+              }
+            }
+        }
+        });
+      }
+    }
+  </script>
 </body>
 
 </html>
