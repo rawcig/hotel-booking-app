@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       title: 'Manage Hotels',
       description: 'Add, edit, and remove hotels',
       icon: '🏨',
-      action: () => router.push('/admin/hotels'),
+      action: () => router.push('/admin/hotels' as any),
       color: 'bg-blue-100',
       textColor: 'text-blue-600'
     },
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
       title: 'Manage Rooms',
       description: 'Add, edit, and remove rooms',
       icon: '🛏️',
-      action: () => router.push('/admin/rooms'),
+      action: () => router.push('/admin/rooms' as any),
       color: 'bg-green-100',
       textColor: 'text-green-600'
     },
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
       title: 'View Bookings',
       description: 'View and manage all bookings',
       icon: '📅',
-      action: () => router.push('/admin/bookings'),
+      action: () => router.push('/admin/bookings' as any),
       color: 'bg-purple-100',
       textColor: 'text-purple-600'
     },
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
       title: 'Manage Staff',
       description: 'Add and manage staff members',
       icon: '👤',
-      action: () => router.push('/admin/staff'),
+      action: () => router.push('/admin/staff' as any),
       color: 'bg-yellow-100',
       textColor: 'text-yellow-600',
       adminOnly: true
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
       title: 'Reports',
       description: 'View booking statistics and reports',
       icon: '📊',
-      action: () => router.push('/admin/reports'),
+      action: () => router.push('/admin/reports' as any),
       color: 'bg-red-100',
       textColor: 'text-red-600'
     }
@@ -179,14 +179,14 @@ export default function AdminDashboard() {
         <Text className="text-lg font-bold text-gray-800 mb-4">Quick Actions</Text>
         <View className="flex-row gap-3">
           <TouchableOpacity 
-            onPress={() => router.push('/admin/hotels/create')}
+            onPress={() => router.push('/admin/hotels/create' as any)}
             className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm"
           >
             <Text className="text-2xl mb-2">+</Text>
             <Text className="text-gray-700 font-medium">Add Hotel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={() => router.push('/admin/rooms/create')}
+            onPress={() => router.push('/admin/rooms/create' as any)}
             className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm"
           >
             <Text className="text-2xl mb-2">+</Text>

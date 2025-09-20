@@ -1,5 +1,4 @@
 import { useHotel } from '@/hooks/useHotels';
-import { supabase } from '@/lib/supabase';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -194,7 +193,8 @@ export default function BookingForm() {
           hotel.name,
           formatDate(checkInDate),
           formatDate(checkOutDate),
-          bookingResult.id
+          bookingResult.id,
+          calculateTotal().toString()
         );
       } catch (error: any) {
         console.error('Booking save error:', error);

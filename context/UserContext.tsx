@@ -9,8 +9,9 @@ interface User {
   id: string;
   email: string;
   name?: string;
-  phone?: string;
+  phone?: string | null;
   created_at?: string;
+  isGuest?: boolean;
 }
 
 interface UserContextType {
@@ -36,7 +37,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const guestUser: User = {
       id: guestId,
       email: 'guest@example.com',
-      name: 'Guest User'
+      name: 'Guest User',
+      isGuest: true
     };
     setUser(guestUser);
     setSession(null);
@@ -60,17 +62,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
               email: result.user.email,
               user_metadata: {
                 name: result.user.name,
-                phone: result.user.phone,
+                phone: result.user.phone !== null ? result.user.phone : undefined,
               }
-            }
-          } as Session);
+            },
+            refresh_token: '',
+            expires_in: 3600,
+            token_type: 'bearer'
+          } as unknown as Session);
         } else {
           // Create guest session
           const guestId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           setUser({
             id: guestId,
             email: 'guest@example.com',
-            name: 'Guest User'
+            name: 'Guest User',
+            isGuest: true
           });
         }
       } catch (error) {
@@ -80,7 +86,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUser({
           id: guestId,
           email: 'guest@example.com',
-          name: 'Guest User'
+          name: 'Guest User',
+          isGuest: true
         });
       } finally {
         setIsLoading(false);

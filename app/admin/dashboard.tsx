@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useAdmin } from '@/context/AdminContext';
 import { images } from '@/constants/images';
@@ -13,18 +14,23 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // Default to current month
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear()); // Default to current year
 
   const handleLogout = async () => {
     await logout();
     router.replace('/admin/login');
   };
 
-  // Fetch financial summary when component mounts
+  // Fetch financial summary when component mounts or when month/year changes
   useEffect(() => {
     const fetchFinancialSummary = async () => {
       try {
         setLoading(true);
-        const response = await financialService.getFinancialSummary();
+        const response = await financialService.getFinancialSummary({
+          month: selectedMonth,
+          year: selectedYear
+        });
         if (response.success && response.summary) {
           setFinancialSummary(response.summary);
         }
@@ -36,14 +42,14 @@ export default function AdminDashboard() {
     };
 
     fetchFinancialSummary();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   const menuItems = [
     {
       title: 'Manage Hotels',
       description: 'Add, edit, and remove hotels',
       icon: '🏨',
-      action: () => router.push('/admin/hotels'),
+      action: () => router.push('/admin/hotels' as any),
       color: 'bg-blue-100',
       textColor: 'text-blue-600'
     },
@@ -51,7 +57,7 @@ export default function AdminDashboard() {
       title: 'Manage Rooms',
       description: 'Add, edit, and remove rooms',
       icon: '🛏️',
-      action: () => router.push('/admin/rooms'),
+      action: () => router.push('/admin/rooms' as any),
       color: 'bg-green-100',
       textColor: 'text-green-600'
     },
@@ -59,7 +65,7 @@ export default function AdminDashboard() {
       title: 'View Bookings',
       description: 'View and manage all bookings',
       icon: '📅',
-      action: () => router.push('/admin/bookings'),
+      action: () => router.push('/admin/bookings' as any),
       color: 'bg-purple-100',
       textColor: 'text-purple-600'
     },
@@ -67,7 +73,7 @@ export default function AdminDashboard() {
       title: 'Manage Staff',
       description: 'Add and manage staff members',
       icon: '👤',
-      action: () => router.push('/admin/staff'),
+      action: () => router.push('/admin/staff' as any),
       color: 'bg-yellow-100',
       textColor: 'text-yellow-600',
       adminOnly: true
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
       title: 'Financial Reports',
       description: 'View financial statistics and reports',
       icon: '💰',
-      action: () => router.push('/admin/financial'),
+      action: () => router.push('/admin/financial' as any),
       color: 'bg-green-100',
       textColor: 'text-green-600'
     },
@@ -84,7 +90,7 @@ export default function AdminDashboard() {
       title: 'Reports',
       description: 'View booking statistics and reports',
       icon: '📊',
-      action: () => router.push('/admin/reports'),
+      action: () => router.push('/admin/reports' as any),
       color: 'bg-red-100',
       textColor: 'text-red-600'
     }
@@ -132,6 +138,29 @@ export default function AdminDashboard() {
     );
   };
 
+  // Generate month options
+  const monthOptions = [
+    { label: 'January', value: 1 },
+    { label: 'February', value: 2 },
+    { label: 'March', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'June', value: 6 },
+    { label: 'July', value: 7 },
+    { label: 'August', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'October', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'December', value: 12 }
+  ];
+
+  // Generate year options (last 5 years + current year)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [];
+  for (let i = currentYear - 5; i <= currentYear; i++) {
+    yearOptions.push({ label: i.toString(), value: i });
+  }
+
   return (
     <ScrollView className="flex-1 bg-gray-50">
       {/* Header */}
@@ -171,9 +200,36 @@ export default function AdminDashboard() {
         </View>
       </View>
 
-      {/* Financial Stats Cards */}
-      <View className="p-4 -mt-4">
-        <Text className="text-lg font-bold text-gray-800 mb-4">Financial Overview</Text>
+      {/* Month/Year Selector */}
+      <View className="p-4">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-lg font-bold text-gray-800">Financial Overview</Text>
+          <View className="flex-row">
+            <View className="mr-2">
+              <Picker
+                selectedValue={selectedMonth}
+                onValueChange={(value) => setSelectedMonth(value)}
+                style={{ height: 40, width: 120 }}
+              >
+                {monthOptions.map((option) => (
+                  <Picker.Item key={option.value} label={option.label} value={option.value} />
+                ))}
+              </Picker>
+            </View>
+            <View>
+              <Picker
+                selectedValue={selectedYear}
+                onValueChange={(value) => setSelectedYear(value)}
+                style={{ height: 40, width: 80 }}
+              >
+                {yearOptions.map((option) => (
+                  <Picker.Item key={option.value} label={option.label} value={option.value} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+        </View>
+        
         {loading ? (
           <View className="bg-white rounded-xl p-6 items-center justify-center">
             <ActivityIndicator size="large" color="#3B82F6" />
@@ -255,14 +311,14 @@ export default function AdminDashboard() {
         <Text className="text-lg font-bold text-gray-800 mb-4">Quick Actions</Text>
         <View className="flex-row gap-3">
           <TouchableOpacity 
-            onPress={() => router.push('/admin/hotels/create')}
+            onPress={() => router.push('/admin/hotels/create' as any)}
             className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm"
           >
             <Text className="text-2xl mb-2">+</Text>
             <Text className="text-gray-700 font-medium">Add Hotel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={() => router.push('/admin/rooms/create')}
+            onPress={() => router.push('/admin/rooms/create' as any)}
             className="flex-1 bg-white rounded-xl p-4 items-center shadow-sm"
           >
             <Text className="text-2xl mb-2">+</Text>

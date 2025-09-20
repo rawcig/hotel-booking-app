@@ -2,12 +2,12 @@
 // Financial reports screen
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Dimensions } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { financialService, FinancialReport, PaymentMethodsData, RevenueReport } from '@/services/financialService';
 
 // Simple bar chart component
-const BarChart = ({ data }: { data: Array<{ period: string; amount: number }> }) => {
+const BarChart = ({ data }: { data: { period: string; amount: number }[] }) => {
   if (!data || data.length === 0) return null;
 
   const maxAmount = Math.max(...data.map(item => item.amount), 0);
@@ -54,9 +54,6 @@ const PaymentMethodsChart = ({ data }: { data: PaymentMethodsData }) => {
 
   const totalAmount = Object.values(data).reduce((sum, method) => sum + method.amount, 0);
   const chartSize = 120;
-  const centerX = chartSize / 2;
-  const centerY = chartSize / 2;
-  const radius = chartSize / 2 - 10;
 
   // Calculate angles for each segment
   let cumulativePercentage = 0;

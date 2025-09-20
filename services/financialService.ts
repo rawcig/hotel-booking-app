@@ -49,9 +49,14 @@ export interface RevenueReport {
 
 class FinancialService {
   // Get financial summary
-  async getFinancialSummary(): Promise<{ success: boolean; summary?: FinancialSummary; error?: string }> {
+  async getFinancialSummary(params?: {
+    month?: number;
+    year?: number;
+  }): Promise<{ success: boolean; summary?: FinancialSummary; error?: string }> {
     try {
-      const response = await apiService.get<FinancialSummary>('/financial/summary');
+      const queryString = new URLSearchParams(params as any).toString();
+      const url = `/financial/summary${queryString ? `?${queryString}` : ''}`;
+      const response = await apiService.get<FinancialSummary>(url);
       return response;
     } catch (error: any) {
       return {

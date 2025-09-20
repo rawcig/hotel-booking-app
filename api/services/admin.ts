@@ -91,7 +91,7 @@ export const adminService = {
         token: 'staff_token_' + staff.id
       };
     } catch (error) {
-      throw new Error(error.message || 'Failed to login as admin');
+      throw new Error((error as Error).message || 'Failed to login as admin');
     }
   },
 

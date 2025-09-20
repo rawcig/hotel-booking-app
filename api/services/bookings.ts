@@ -164,7 +164,7 @@ export const bookingsService = {
         // Re-throw hotel service errors
         throw error;
       } else {
-        throw new BookingServiceError(`Unexpected error while creating booking: ${error.message}`);
+        throw new BookingServiceError(`Unexpected error while creating booking: ${(error as Error).message}`);
       }
     }
   },
@@ -216,7 +216,7 @@ export const bookingsService = {
       if (error instanceof BookingServiceError) {
         throw error;
       } else {
-        throw new BookingServiceError(`Unexpected error while fetching bookings: ${error.message}`);
+        throw new BookingServiceError(`Unexpected error while fetching bookings: ${(error as Error).message}`);
       }
     }
   },
@@ -248,7 +248,7 @@ export const bookingsService = {
       if (error instanceof BookingServiceError) {
         throw error;
       } else {
-        throw new BookingServiceError(`Unexpected error while fetching booking: ${error.message}`);
+        throw new BookingServiceError(`Unexpected error while fetching booking: ${(error as Error).message}`);
       }
     }
   },
@@ -358,7 +358,7 @@ export const bookingsService = {
       if (error instanceof BookingServiceError) {
         throw error;
       } else {
-        throw new BookingServiceError(`Unexpected error while cancelling booking: ${error.message}`);
+        throw new BookingServiceError(`Unexpected error while cancelling booking: ${(error as Error).message}`);
       }
     }
   },
@@ -404,7 +404,7 @@ export const bookingsService = {
       if (error instanceof BookingServiceError) {
         throw error;
       } else {
-        throw new BookingServiceError(`Unexpected error while fetching booking stats: ${error.message}`);
+        throw new BookingServiceError(`Unexpected error while fetching booking stats: ${(error as Error).message}`);
       }
     }
   },

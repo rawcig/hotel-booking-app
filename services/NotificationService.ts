@@ -12,6 +12,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -112,9 +114,7 @@ class NotificationService {
           sound: 'default',
           badge: 1,
         },
-        trigger: trigger || {
-          seconds: 1, // Default to 1 second delay
-        },
+        trigger: trigger || null,
       });
       
       console.log('Notification scheduled with ID:', notificationId);
@@ -158,9 +158,7 @@ class NotificationService {
     trigger.setDate(trigger.getDate() + 1);
     trigger.setHours(10, 0, 0, 0);
     
-    return this.scheduleNotification(title, body, {
-      date: trigger,
-    });
+    return this.scheduleNotification(title, body);
   }
 
   // Send a special offer notification
@@ -212,9 +210,7 @@ class NotificationService {
     const checkIn = new Date(checkInDate);
     const reminderDate = new Date(checkIn.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
     
-    return this.scheduleNotification(title, body, {
-      date: reminderDate,
-    });
+    return this.scheduleNotification(title, body);
   }
 
   // Schedule a check-out reminder
@@ -230,9 +226,7 @@ class NotificationService {
     const checkOut = new Date(checkOutDate);
     checkOut.setHours(9, 0, 0, 0); // 9:00 AM
     
-    return this.scheduleNotification(title, body, {
-      date: checkOut,
-    });
+    return this.scheduleNotification(title, body);
   }
 
   // Set up notification listeners

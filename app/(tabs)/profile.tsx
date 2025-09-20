@@ -84,20 +84,7 @@ export default function Profile() {
   };
 
   // Load settings from storage
-  useFocusEffect(
-    useCallback(() => {
-      // Don't load if we just saved
-      if (justSavedProfile.current) {
-        justSavedProfile.current = false;
-        return;
-      }
-      
-      loadSettings();
-      loadProfile();
-    }, [user]) // Add user as dependency so it reloads when user changes
-  );
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const savedSettings = await AsyncStorage.getItem('userSettings');
       if (savedSettings) {
@@ -106,9 +93,9 @@ export default function Profile() {
     } catch (error) {
       console.error('Error loading settings:', error);
     }
-  };
+  }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     // If we just saved, don't reload
     if (justSavedProfile.current) {
       justSavedProfile.current = false;
@@ -134,9 +121,9 @@ export default function Profile() {
               phone: profile.phone || user.phone || '',
               avatar: profile.avatar_url ? { uri: profile.avatar_url } : images.userMale,
               memberSince: new Date(profile.created_at).getFullYear().toString(),
-              totalBookings: 12, // We'll fetch this from bookings table later
-              favoriteHotels: 5,
-              loyaltyPoints: 2450,
+              totalBookings: '12', // We'll fetch this from bookings table later
+              favoriteHotels: '5',
+              loyaltyPoints: '2450',
               bio: profile.bio || ''
             });
             
@@ -169,7 +156,21 @@ export default function Profile() {
     } catch (error) {
       console.error('Error loading profile:', error);
     }
-  };
+  }, [user]);
+
+  // Load settings from storage
+  useFocusEffect(
+    useCallback(() => {
+      // Don't load if we just saved
+      if (justSavedProfile.current) {
+        justSavedProfile.current = false;
+        return;
+      }
+      
+      loadSettings();
+      loadProfile();
+    }, [loadSettings, loadProfile]) // Add all dependencies
+  );
 
   const saveSettings = async (newSettings: any) => {
     try {

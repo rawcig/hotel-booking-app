@@ -86,7 +86,7 @@ export const hotelsService = {
       if (error instanceof HotelServiceError) {
         throw error;
       } else {
-        throw new HotelServiceError(`Unexpected error while fetching hotels: ${error.message}`);
+        throw new HotelServiceError(`Unexpected error while fetching hotels: ${(error as Error).message}`);
       }
     }
   },
@@ -118,7 +118,7 @@ export const hotelsService = {
       if (error instanceof HotelServiceError) {
         throw error;
       } else {
-        throw new HotelServiceError(`Unexpected error while fetching hotel: ${error.message}`);
+        throw new HotelServiceError(`Unexpected error while fetching hotel: ${(error as Error).message}`);
       }
     }
   },
@@ -141,7 +141,7 @@ export const hotelsService = {
       if (error instanceof HotelServiceError) {
         throw error;
       } else {
-        throw new HotelServiceError(`Unexpected error while searching hotels: ${error.message}`);
+        throw new HotelServiceError(`Unexpected error while searching hotels: ${(error as Error).message}`);
       }
     }
   },
@@ -165,7 +165,7 @@ export const hotelsService = {
       if (error instanceof HotelServiceError) {
         throw error;
       } else {
-        throw new HotelServiceError(`Unexpected error while fetching featured hotels: ${error.message}`);
+        throw new HotelServiceError(`Unexpected error while fetching featured hotels: ${(error as Error).message}`);
       }
     }
   },

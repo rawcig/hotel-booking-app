@@ -38,6 +38,7 @@ A modern hotel booking application built with React Native and Expo, featuring:
 - Payment methods breakdown
 - Revenue trend visualization
 - Hotel performance analytics
+- **Dynamic month/year filtering for financial data**
 
 ### 📱 User Experience
 - Smooth navigation with tab-based interface

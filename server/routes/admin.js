@@ -13,6 +13,29 @@ router.use(authorizeAdmin);
 // Get dashboard statistics
 router.get('/dashboard/stats', async (req, res) => {
   try {
+    const { month, year } = req.query;
+    
+    // Build query for bookings
+    let bookingsQuery = supabase.from('bookings').select('total_price, status');
+    
+    // Apply month/year filter if provided
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1); // month is 0-indexed in JS Date
+      const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of the month
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      bookingsQuery = bookingsQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    } else if (year) {
+      // Filter by entire year
+      const startDate = new Date(parseInt(year), 0, 1); // Jan 1st
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59); // Dec 31st
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      bookingsQuery = bookingsQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    }
+
     // Get total hotels count
     const { count: hotelsCount, error: hotelsError } = await supabase
       .from('hotels')
@@ -26,10 +49,27 @@ router.get('/dashboard/stats', async (req, res) => {
       });
     }
 
-    // Get total bookings count
-    const { count: bookingsCount, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('*', { count: 'exact', head: true });
+    // Get total bookings count (with filter if applicable)
+    let bookingsCountQuery = supabase.from('bookings').select('*', { count: 'exact', head: true });
+    
+    // Apply the same date filters to bookings count
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      bookingsCountQuery = bookingsCountQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    } else if (year) {
+      const startDate = new Date(parseInt(year), 0, 1);
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      bookingsCountQuery = bookingsCountQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    }
+    
+    const { count: bookingsCount, error: bookingsError } = await bookingsCountQuery;
 
     if (bookingsError && bookingsError.code !== 'PGRST116') {
       return res.status(500).json({
@@ -40,9 +80,7 @@ router.get('/dashboard/stats', async (req, res) => {
     }
 
     // Get total revenue (sum of total_price from completed bookings)
-    const { data: revenueData, error: revenueError } = await supabase
-      .from('bookings')
-      .select('total_price, status');
+    const { data: revenueData, error: revenueError } = await bookingsQuery;
 
     let totalRevenue = 0;
     let pendingRevenue = 0;
@@ -63,8 +101,8 @@ router.get('/dashboard/stats', async (req, res) => {
       console.warn('Warning: Error fetching revenue data:', revenueError.message);
     }
 
-    // Get recent bookings (last 5)
-    const { data: recentBookings, error: recentBookingsError } = await supabase
+    // Get recent bookings (last 5) with date filter
+    let recentBookingsQuery = supabase
       .from('bookings')
       .select(`
         id,
@@ -78,6 +116,25 @@ router.get('/dashboard/stats', async (req, res) => {
       `)
       .order('created_at', { ascending: false })
       .limit(5);
+      
+    // Apply date filter to recent bookings
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      recentBookingsQuery = recentBookingsQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    } else if (year) {
+      const startDate = new Date(parseInt(year), 0, 1);
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      recentBookingsQuery = recentBookingsQuery.gte('created_at', startDateString).lte('created_at', endDateString);
+    }
+
+    const { data: recentBookings, error: recentBookingsError } = await recentBookingsQuery;
 
     if (recentBookingsError) {
       return res.status(500).json({

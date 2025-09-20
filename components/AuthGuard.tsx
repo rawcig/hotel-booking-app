@@ -14,7 +14,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   
   // Check if we're in a protected route (admin routes, profile editing, etc.)
-  const isProtectedRoute = segments[0] === 'admin' || segments[0] === 'profile/edit';
+  const isProtectedRoute = segments[0] === 'admin' || (segments as any).includes('profile/edit');
   
   useEffect(() => {
     if (!isLoading) {

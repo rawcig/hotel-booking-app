@@ -101,7 +101,7 @@ export const authService = {
       if (error instanceof AuthServiceError) {
         throw error;
       } else {
-        throw new AuthServiceError(`Unexpected error during login: ${error.message}`);
+        throw new AuthServiceError(`Unexpected error during login: ${(error as Error).message}`);
       }
     }
   },
@@ -196,7 +196,7 @@ export const authService = {
       if (error instanceof AuthServiceError) {
         throw error;
       } else {
-        throw new AuthServiceError(`Unexpected error during signup: ${error.message}`);
+        throw new AuthServiceError(`Unexpected error during signup: ${(error as Error).message}`);
       }
     }
   },
@@ -212,7 +212,7 @@ export const authService = {
       if (error instanceof AuthServiceError) {
         throw error;
       } else {
-        throw new AuthServiceError(`Unexpected error during logout: ${error.message}`);
+        throw new AuthServiceError(`Unexpected error during logout: ${(error as Error).message}`);
       }
     }
   },
@@ -286,7 +286,7 @@ export const authService = {
       if (error instanceof AuthServiceError) {
         throw error;
       } else {
-        throw new AuthServiceError(`Unexpected error fetching current user: ${error.message}`);
+        throw new AuthServiceError(`Unexpected error fetching current user: ${(error as Error).message}`);
       }
     }
   },

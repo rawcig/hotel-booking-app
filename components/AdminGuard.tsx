@@ -34,7 +34,7 @@ export default function AdminGuard({ children, requireSuperAdmin = false }: Admi
         router.replace('/admin/dashboard');
       }
     }
-  }, [admin, isLoading, isSuperAdmin, isAdminRoute, requireSuperAdmin]);
+  }, [admin, isLoading, isSuperAdmin, isAdminRoute, requireSuperAdmin, router, segments]);
 
   // Show loading indicator while checking auth state
   if (isLoading) {

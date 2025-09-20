@@ -35,7 +35,8 @@ async function testNotifications() {
       'Grand Plaza Hotel',
       '2023-12-15',
       '2023-12-18',
-      12345
+      12345,
+      '$200'
     );
     console.log('Booking confirmation sent with ID:', bookingNotificationId);
     

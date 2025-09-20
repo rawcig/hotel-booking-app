@@ -13,10 +13,31 @@ router.use(authorizeAdmin);
 // Get financial summary
 router.get('/summary', async (req, res) => {
   try {
-    // Get all bookings with financial data
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('id, total_price, status, created_at, hotel_name');
+    const { month, year } = req.query;
+
+    // Build query for bookings
+    let query = supabase.from('bookings').select('id, total_price, status, created_at, hotel_name');
+
+    // Apply month/year filter if provided
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1); // month is 0-indexed in JS Date
+      const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of the month
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      query = query.gte('created_at', startDateString).lte('created_at', endDateString);
+    } else if (year) {
+      // Filter by entire year
+      const startDate = new Date(parseInt(year), 0, 1); // Jan 1st
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59); // Dec 31st
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+      
+      query = query.gte('created_at', startDateString).lte('created_at', endDateString);
+    }
+
+    // Get bookings with financial data
+    const { data: bookings, error: bookingsError } = await query;
 
     if (bookingsError) {
       console.error('Database error fetching bookings:', bookingsError);

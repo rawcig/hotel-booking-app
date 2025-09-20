@@ -205,11 +205,22 @@
         <div class="content-section bg-white rounded-2xl p-6 shadow-md">
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Recent Bookings</h2>
+            <div class="flex gap-2">
             <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm">
+              <option>January</option>
+              <option>February</option>
+              <option>March</option>
+              <option>April</option>
+              <option>May</option>
+              <option>June</option>
+              <option>July</option>
+              <option>August</option>
+              <option>September</option>
               <option>October</option>
               <option>November</option>
               <option>December</option>
             </select>
+          </div>
           </div>
           <div class="table-container overflow-x-auto">
             <table class="data-table w-full border-collapse">
@@ -516,12 +527,27 @@
         <div class="content-section bg-white rounded-2xl p-6 shadow-md mb-8">
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Revenue Overview</h2>
-            <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="revenuePeriod">
-              <option value="7">Last 7 Days</option>
-              <option value="30" selected>Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-              <option value="365">Last Year</option>
-            </select>
+            <div class="flex gap-2">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="revenueMonth">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="revenueYear">
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+              </select>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="revenueChart" height="300"></canvas>
@@ -531,12 +557,27 @@
         <div class="content-section bg-white rounded-2xl p-6 shadow-md">
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Booking Trends</h2>
-            <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="bookingPeriod">
-              <option value="7">Last 7 Days</option>
-              <option value="30" selected>Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-              <option value="365">Last Year</option>
-            </select>
+            <div class="flex gap-2">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="bookingMonth">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="bookingYear">
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+              </select>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="bookingChart" height="300"></canvas>
@@ -1069,6 +1110,7 @@
   </div>
 
   <script src="JS/script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 
 </html>

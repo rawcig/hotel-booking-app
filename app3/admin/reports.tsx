@@ -115,10 +115,10 @@ export default function AdminReports() {
               <Text className="text-gray-600">Critical</Text>
               <View className="flex-row items-center">
                 <View className="w-20 h-2 bg-gray-200 rounded-full mr-2">
-                  <View 
-                    className="h-2 bg-red-600 rounded-full" 
-                    style={{ width: `${(summary.errors.severities.critical / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0))) * 100}%` }}
-                  />
+                                  <View 
+                  className="h-2 bg-red-600 rounded-full" 
+                  style={{ width: `${(summary.errors.severities.critical / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0) as number)) * 100}%` }}
+                />
                 </View>
                 <Text className="font-medium">{summary.errors.severities.critical}</Text>
               </View>
@@ -128,10 +128,10 @@ export default function AdminReports() {
               <Text className="text-gray-600">High</Text>
               <View className="flex-row items-center">
                 <View className="w-20 h-2 bg-gray-200 rounded-full mr-2">
-                  <View 
-                    className="h-2 bg-orange-500 rounded-full" 
-                    style={{ width: `${(summary.errors.severities.high / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0))) * 100}%` }}
-                  />
+                                  <View 
+                  className="h-2 bg-orange-500 rounded-full" 
+                  style={{ width: `${(summary.errors.severities.high / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0) as number)) * 100}%` }}
+                />
                 </View>
                 <Text className="font-medium">{summary.errors.severities.high}</Text>
               </View>
@@ -142,9 +142,9 @@ export default function AdminReports() {
               <View className="flex-row items-center">
                 <View className="w-20 h-2 bg-gray-200 rounded-full mr-2">
                   <View 
-                    className="h-2 bg-yellow-500 rounded-full" 
-                    style={{ width: `${(summary.errors.severities.medium / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0))) * 100}%` }}
-                  />
+                  className="h-2 bg-yellow-500 rounded-full" 
+                  style={{ width: `${(summary.errors.severities.medium / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0) as number)) * 100}%` }}
+                />
                 </View>
                 <Text className="font-medium">{summary.errors.severities.medium}</Text>
               </View>
@@ -155,9 +155,9 @@ export default function AdminReports() {
               <View className="flex-row items-center">
                 <View className="w-20 h-2 bg-gray-200 rounded-full mr-2">
                   <View 
-                    className="h-2 bg-green-500 rounded-full" 
-                    style={{ width: `${(summary.errors.severities.low / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0))) * 100}%` }}
-                  />
+                  className="h-2 bg-green-500 rounded-full" 
+                  style={{ width: `${(summary.errors.severities.low / Math.max(1, Object.values(summary.errors.severities).reduce((a, b) => (a as number) + (b as number), 0) as number)) * 100}%` }}
+                />
                 </View>
                 <Text className="font-medium">{summary.errors.severities.low}</Text>
               </View>
