@@ -206,10 +206,10 @@
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Recent Bookings</h2>
             <div class="flex gap-2">
-            <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm">
-              <!-- Options will be populated by JavaScript -->
-            </select>
-          </div>
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm">
+                <!-- Options will be populated by JavaScript -->
+              </select>
+            </div>
           </div>
           <div class="table-container overflow-x-auto">
             <table class="data-table w-full border-collapse">
@@ -457,12 +457,12 @@
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 onclick="loadBookingsPage(currentBookingsPage + 1)" id="nextBookingsPage" disabled>⟩</button>
-              <button
+              <!-- <button
                 class="auth-btn ml-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium shadow hover:shadow-md transition-all duration-300"
                 onclick="testHotelAPI()">Test API Connection</button>
               <button
                 class="auth-btn ml-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg font-medium shadow hover:shadow-md transition-all duration-300"
-                onclick="testBookingAPI()">Test Booking API</button>
+                onclick="testBookingAPI()">Test Booking API</button> -->
             </div>
           </div>
         </div>
@@ -517,7 +517,8 @@
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Revenue Overview</h2>
             <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="revenueMonth">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="revenueMonth">
                 <option value="1">January</option>
                 <option value="2">February</option>
                 <option value="3">March</option>
@@ -531,7 +532,8 @@
                 <option value="11">November</option>
                 <option value="12">December</option>
               </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="revenueYear">
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="revenueYear">
                 <option value="2023">2023</option>
                 <option value="2024">2024</option>
                 <option value="2025" selected>2025</option>
@@ -547,7 +549,8 @@
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Booking Trends</h2>
             <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="bookingMonth">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="bookingMonth">
                 <option value="1">January</option>
                 <option value="2">February</option>
                 <option value="3">March</option>
@@ -561,7 +564,8 @@
                 <option value="11">November</option>
                 <option value="12">December</option>
               </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="bookingYear">
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="bookingYear">
                 <option value="2023">2023</option>
                 <option value="2024">2024</option>
                 <option value="2025" selected>2025</option>
@@ -623,7 +627,8 @@
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Revenue Overview</h2>
             <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="financialMonth">
+              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="financialMonth">
                 <option value="1">January</option>
                 <option value="2">February</option>
                 <option value="3">March</option>
@@ -637,7 +642,8 @@
                 <option value="11">November</option>
                 <option value="12">December</option>
               </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm" id="financialYear">
+              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                id="financialYear">
                 <option value="2023">2023</option>
                 <option value="2024">2024</option>
                 <option value="2025" selected>2025</option>
@@ -690,12 +696,14 @@
             <div class="pagination flex items-center gap-2">
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadTransactionsPage(currentTransactionsPage - 1)" id="prevTransactionsPage" disabled>⟨</button>
+                onclick="loadTransactionsPage(currentTransactionsPage - 1)" id="prevTransactionsPage"
+                disabled>⟨</button>
               <span id="transactionsPageInfo" class="text-gray-600">Page <span id="currentTransactionsPage">1</span> of
                 <span id="totalTransactionsPages">1</span></span>
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadTransactionsPage(currentTransactionsPage + 1)" id="nextTransactionsPage" disabled>⟩</button>
+                onclick="loadTransactionsPage(currentTransactionsPage + 1)" id="nextTransactionsPage"
+                disabled>⟩</button>
             </div>
           </div>
         </div>
@@ -706,7 +714,7 @@
   <!-- Add User Modal -->
   <div id="addUserModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-1000"
     style="display: none;" role="dialog" aria-labelledby="addUserModalTitle" aria-modal="true" tabindex="-1">
-    <div class="modal-content bg-white rounded-2xl w-11/12 max-w-md max-h-90vh overflow-y-auto shadow-2xl">
+    <div class="modal-content  bg-white rounded-2xl w-11/12 max-w-md max-h-90vh overflow-y-auto shadow-2xl">
       <div class="modal-header flex justify-between items-center p-6 border-b border-gray-200">
         <h2 id="addUserModalTitle" class="text-xl font-bold text-gray-800">Add New User</h2>
         <button class="close text-2xl text-gray-500 hover:text-gray-700" onclick="closeAddUserModal()"
@@ -1012,7 +1020,8 @@
   <!-- Add Hotel Modal -->
   <div id="addHotelModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-1000"
     style="display: none;" role="dialog" aria-labelledby="addHotelModalTitle" aria-modal="true" tabindex="-1">
-    <div class="modal-content bg-white rounded-2xl w-11/12 max-w-2xl max-h-90vh overflow-y-auto shadow-2xl">
+    <div
+      class="modal-content scrollbar-hide max-h-[90vh] bg-white rounded-2xl w-11/12 max-w-2xl max-h-90vh overflow-y-auto shadow-2xl">
       <div class="modal-header flex justify-between items-center p-6 border-b border-gray-200">
         <h2 id="addHotelModalTitle" class="text-xl font-bold text-gray-800">Add New Hotel</h2>
         <button class="close text-2xl text-gray-500 hover:text-gray-700" onclick="closeAddHotelModal()"
@@ -1085,33 +1094,43 @@
   <!-- Edit Hotel Modal -->
   <div id="editHotelModal" class="modal" style="display: none;" role="dialog" aria-labelledby="editHotelModalTitle"
     aria-modal="true" tabindex="-1">
-    <div class="modal-content bg-white rounded-2xl w-11/12 max-w-2xl max-h-90vh overflow-y-auto shadow-2xl">
+    <div class="modal-content bg-white rounded-2xl w-11/12 max-w-2xl max-h-[90vh] shadow-2xl flex flex-col">
       <div class="modal-header flex justify-between items-center p-6 border-b border-gray-200">
         <h2 id="editHotelModalTitle" class="text-xl font-bold text-gray-800">Edit Hotel</h2>
-        <button class="close text-2xl text-gray-500 hover:text-gray-700" onclick="closeEditHotelModal()" aria-label="Close edit hotel modal">&times;</button>
+        <button class="close text-2xl text-gray-500 hover:text-gray-700" onclick="closeEditHotelModal()"
+          aria-label="Close edit hotel modal">&times;</button>
       </div>
       <div class="modal-body p-6">
         <form id="editHotelForm">
           <input type="hidden" id="editHotelId">
           <div class="form-group mb-5">
             <label for="editHotelName" class="block text-gray-700 font-medium mb-2">Hotel Name:</label>
-            <input type="text" id="editHotelName" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            <input type="text" id="editHotelName"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
           </div>
           <div class="form-group mb-5">
             <label for="editHotelLocation" class="block text-gray-700 font-medium mb-2">Location:</label>
-            <input type="text" id="editHotelLocation" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            <input type="text" id="editHotelLocation"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
           </div>
           <div class="form-group mb-5">
             <label for="editHotelDistance" class="block text-gray-700 font-medium mb-2">Distance:</label>
-            <input type="text" id="editHotelDistance" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input type="text" id="editHotelDistance"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           </div>
           <div class="form-group mb-5">
             <label for="editHotelRating" class="block text-gray-700 font-medium mb-2">Rating:</label>
-            <input type="number" id="editHotelRating" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" step="0.1" min="0" max="5">
+            <input type="number" id="editHotelRating"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              step="0.1" min="0" max="5">
           </div>
           <div class="form-group mb-5">
             <label for="editHotelPrice" class="block text-gray-700 font-medium mb-2">Price per Night:</label>
-            <input type="number" id="editHotelPrice" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" step="0.01" required>
+            <input type="number" id="editHotelPrice"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              step="0.01" required>
           </div>
           <div class="form-group mb-5">
             <label for="editHotelImage" class="block text-gray-700 font-medium mb-2">Hotel Image:</label>
@@ -1123,15 +1142,23 @@
           </div>
           <div class="form-group mb-5">
             <label for="editHotelDescription" class="block text-gray-700 font-medium mb-2">Description:</label>
-            <textarea id="editHotelDescription" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3"></textarea>
+            <textarea id="editHotelDescription"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"></textarea>
           </div>
           <div class="form-group mb-6">
-            <label for="editHotelAmenities" class="block text-gray-700 font-medium mb-2">Amenities (comma separated):</label>
-            <input type="text" id="editHotelAmenities" class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <label for="editHotelAmenities" class="block text-gray-700 font-medium mb-2">Amenities (comma
+              separated):</label>
+            <input type="text" id="editHotelAmenities"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           </div>
           <div class="form-actions flex justify-end gap-3">
-            <button type="button" class="btn-secondary px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors duration-300" onclick="closeEditHotelModal()">Cancel</button>
-            <button type="submit" class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300">Update Hotel</button>
+            <button type="button"
+              class="btn-secondary px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors duration-300"
+              onclick="closeEditHotelModal()">Cancel</button>
+            <button type="submit"
+              class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300">Update
+              Hotel</button>
           </div>
         </form>
       </div>
@@ -1142,13 +1169,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     // Initialize charts after DOM loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       // Set up event listeners for report selectors
       const revenueMonthSelector = document.getElementById('revenueMonth');
       const revenueYearSelector = document.getElementById('revenueYear');
       const bookingMonthSelector = document.getElementById('bookingMonth');
       const bookingYearSelector = document.getElementById('bookingYear');
-      
+
       // Set default values for selectors
       if (revenueMonthSelector) {
         revenueMonthSelector.value = new Date().getMonth() + 1;
@@ -1162,11 +1189,11 @@
       if (bookingYearSelector) {
         bookingYearSelector.value = new Date().getFullYear();
       }
-      
+
       // Initialize charts
       initializeCharts();
     });
-    
+
     function initializeCharts() {
       // Revenue chart
       const revenueCtx = document.getElementById('revenueChart');
@@ -1197,7 +1224,7 @@
           }
         });
       }
-      
+
       // Booking chart
       const bookingCtx = document.getElementById('bookingChart');
       if (bookingCtx) {
@@ -1224,7 +1251,7 @@
                 text: 'Monthly Bookings'
               }
             }
-        }
+          }
         });
       }
     }

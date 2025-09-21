@@ -4,6 +4,13 @@ let currentUser = null;
 let currentMonth = new Date().getMonth() + 1; // Current month (1-12)
 let currentYear = new Date().getFullYear(); // Current year
 
+// Application Data
+let appData = {
+    rooms: [],
+    availableRooms: [],
+    bookings: []
+};
+
 // DOM Elements - these will be initialized after DOM loads
 let loginPage, registerPage, dashboard, navItems, pageContents;
 
@@ -14,6 +21,8 @@ const API_BASE_URL = '/api';
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
+
+
 
 // Application Initialization
 function initializeApp() {
@@ -48,8 +57,8 @@ function initializeApp() {
 // User Storage Functions
 function getStoredUser() {
     try {
-        // Use regular variables instead of localStorage for Claude.ai compatibility
-        return null; // For now, don't persist login state
+        const user = localStorage.getItem('adminUser');
+        return user ? JSON.parse(user) : null;
     } catch (error) {
         console.error('Error retrieving user from storage:', error);
         return null;
@@ -527,6 +536,18 @@ function handleNavigation(e) {
         console.log('Content element not found for:', page + 'Content');
     }
 }
+// Hotel Modal Functions
+function openAddHotelModal() {
+    const modal = document.getElementById('addHotelModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Focus on the first input
+        const firstInput = modal.querySelector('input, textarea, select');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+        }
+    }
+}
 
 // Data Loading Functions (with error handling for demo)
 async function loadDashboardData() {
@@ -650,100 +671,114 @@ function renderDashboardTable(bookings) {
 // Hotel Management Functions
 async function loadRoomsData() {
     try {
-        console.log('Loading hotel data...');
-        
-        // Fetch hotels from API
-        const response = await fetch(API_BASE_URL + '/hotels', {
-            headers: {
-                'Authorization': `Bearer ${currentUser.token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch hotels');
+        // Show loading state
+        const roomsGrid = document.getElementById('roomsGrid');
+        if (roomsGrid) {
+            roomsGrid.innerHTML = '<div class="loading w-full flex justify-center items-center"><div class="spinner"></div><div class="ml-2">Loading hotels...</div></div>';
         }
         
+        // Fetch hotels data
+        const response = await fetch(`${API_BASE_URL}/hotels?limit=1000`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser?.token}`
+            }
+        });
         const result = await response.json();
         
         if (result.success) {
-            // Update hotels table
-            const tableBody = document.getElementById('hotelsTableBody');
-            if (tableBody) {
-                if (result.hotels && result.hotels.length > 0) {
-                    tableBody.innerHTML = result.hotels.map(hotel => `
-                        <tr>
-                            <td class="text-left p-4 border-b">${hotel.id}</td>
-                            <td class="text-left p-4 border-b">${hotel.name}</td>
-                            <td class="text-left p-4 border-b">${hotel.location}</td>
-                            <td class="text-left p-4 border-b">${hotel.rating}</td>
-                            <td class="text-left p-4 border-b">${formatCurrency(hotel.price)}</td>
-                            <td class="text-left p-4 border-b">
-                                <div class="action-buttons flex gap-2">
-                                    <button class="action-btn view bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onclick="viewHotel(${hotel.id})" title="View">
-                                        <span>👁️</span>
-                                    </button>
-                                    <button class="action-btn edit bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600" onclick="editHotel(${hotel.id})" title="Edit">
-                                        <span>✏️</span>
-                                    </button>
-                                    <button class="action-btn delete bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" onclick="deleteHotel(${hotel.id})" title="Delete">
-                                        <span>🗑️</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4">No hotels found</td></tr>';
-                }
-            }
+            // Transform hotel data to match room structure
+            appData.rooms = result.hotels.map((hotel, index) => ({
+                id: hotel.id || index,
+                hname: hotel.name,
+                number: `${hotel.id || index}`,
+                type: hotel.name,
+                floor: 'N/A',
+                bedType: 'N/A',
+                price: parseFloat(hotel.price),
+                status: 'Available',
+                rating: parseFloat(hotel.rating),
+                reviews: hotel.reviews ? hotel.reviews.length : 0,
+                images: hotel.gallery || [hotel.image]
+            }));
             
-            // Update pagination info
-            const totalCountEl = document.getElementById('hotelsTotalCount');
-            const currentPageEl = document.getElementById('currentHotelsPage');
-            const totalPagesEl = document.getElementById('totalHotelsPages');
-            
-            if (totalCountEl) totalCountEl.textContent = result.pagination?.totalCount || '0';
-            if (currentPageEl) currentPageEl.textContent = result.pagination?.currentPage || '1';
-            if (totalPagesEl) totalPagesEl.textContent = result.pagination?.totalPages || '1';
-            
-            // Update pagination buttons
-            const prevBtn = document.getElementById('prevHotelsPage');
-            const nextBtn = document.getElementById('nextHotelsPage');
-            
-            if (prevBtn) {
-                prevBtn.disabled = result.pagination?.currentPage <= 1;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = result.pagination?.currentPage >= result.pagination?.totalPages;
-            }
+            renderRoomsContent();
         } else {
-            throw new Error(result.message || 'Failed to load hotels');
+            showNotification('Failed to load hotels data', 'error');
         }
-        
-        console.log('Hotel data loaded successfully');
-        
     } catch (error) {
-        console.error('Error loading hotel data:', error);
-        showNotification('Failed to load hotel data.', 'error');
-        
-        // Show error in table
-        const tableBody = document.getElementById('hotelsTableBody');
-        if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500">Failed to load hotels</td></tr>';
-        }
+        console.error('Error loading hotels data:', error);
+        showNotification('Error loading hotels data', 'error');
     }
+}
+
+function renderRoomsContent() {
+    const roomsGrid = document.getElementById('roomsGrid');
+    if (!roomsGrid) return;
+    
+    if (appData.rooms.length === 0) {
+        roomsGrid.innerHTML = '<p>No hotels found</p>';
+        return;
+    }
+    
+    roomsGrid.innerHTML = '';
+    
+    appData.rooms.forEach(room => {
+        const roomCard = createRoomCard(room);
+        roomsGrid.appendChild(roomCard);
+    });
+}
+
+function createRoomCard(room) {
+    const card = document.createElement('div');
+    card.className = 'room-card bg-white rounded-2xl overflow-hidden shadow-md';
+    
+    const stars = '★'.repeat(Math.floor(room.rating)) + '☆'.repeat(5 - Math.floor(room.rating));
+    
+    // Use the full hotel name
+    const hotelName = room.hname || `Hotel ${room.id}`;
+    
+    card.innerHTML = `
+        <div class="room-image" style="background-image: url('${room.images[0]}')">
+            <button class="room-carousel prev" onclick="previousImage(${room.id})">‹</button>
+            <button class="room-carousel next" onclick="nextImage(${room.id})">›</button>
+        </div>
+        <div class="room-info p-6">
+            <div class="room-header">
+                <div class="room-number font-bold text-lg">ID: ${room.id} - ${hotelName}</div>
+                <div class="room-price font-bold text-blue-600">${room.price.toFixed(2)}/night</div>
+            </div>
+            <div class="room-rating">
+                <span class="stars text-amber-500">${stars}</span>
+                <span class="rating-count text-gray-500">(${room.reviews} reviews)</span>
+            </div>
+            <div class="room-actions mt-4">
+                <button class="btn-secondary px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-300" onclick="editHotel(${room.id})">Edit Hotel</button>
+                <button class="favorite-btn text-2xl" onclick="toggleFavorite(${room.id})">♡</button>
+            </div>
+        </div>
+    `;
+    
+    return card;
 }
 
 // View hotel details
 function viewHotel(hotelId) {
     console.log('Viewing hotel:', hotelId);
-    showNotification('View hotel functionality would be implemented here', 'info');
+    showNotification(`View hotel functionality for hotel ID: ${hotelId} would be implemented here`, 'info');
+    
+    // In a real implementation, this would open a modal with hotel details
+    // For now, we'll just show a notification
+    alert(`Viewing details for hotel ID: ${hotelId}\nIn a full implementation, this would show hotel details in a modal.`);
 }
 
 // Edit hotel details
 function editHotel(hotelId) {
     console.log('Editing hotel:', hotelId);
-    showNotification('Edit hotel functionality would be implemented here', 'info');
+    showNotification(`Edit hotel functionality for hotel ID: ${hotelId} would be implemented here`, 'info');
+    
+    // In a real implementation, this would open a modal with hotel edit form
+    // For now, we'll just show a notification
+    alert(`Editing hotel ID: ${hotelId}\nIn a full implementation, this would open an edit form in a modal.`);
 }
 
 // Delete hotel
@@ -909,7 +944,7 @@ async function loadBookingsData() {
                                 <button class="action-btn view" onclick="viewBooking(${booking.id})" title="View">
                                     <span>👁️</span>
                                 </button>
-                                <button class="action-btn edit" onclick="editBooking(${booking.id})" title="Edit">
+                                <button class="action-btn edit" onclick="editHotel(${booking.id})" title="Edit">
                                     <span>✏️</span>
                                 </button>
                                 <button class="action-btn delete" onclick="deleteBooking(${booking.id})" title="Delete">
@@ -1070,6 +1105,11 @@ function closeEditBookingModal() {
     const modal = document.getElementById('editBookingModal');
     if (modal) {
         modal.style.display = 'none';
+        // Reset form
+        const form = document.getElementById('editBookingForm');
+        if (form) {
+            form.reset();
+        }
     }
 }
 
@@ -1242,6 +1282,25 @@ async function loadFinancialsData() {
         }
     }
 }
+function openEditRoomModal(hotel) {
+    // Populate the form with hotel data
+    document.getElementById('editRoomId').value = hotel.id;
+    document.getElementById('editRoomName').value = hotel.name;
+    document.getElementById('editRoomLocation').value = hotel.location;
+    document.getElementById('editRoomPrice').value = hotel.price;
+    document.getElementById('editRoomRating').value = hotel.rating;
+    document.getElementById('editRoomImage').value = hotel.image;
+    document.getElementById('editRoomDescription').value = hotel.description || '';
+    document.getElementById('editRoomAmenities').value = hotel.amenities ? hotel.amenities.join(', ') : '';
+    
+    // Show the modal
+    document.getElementById('editRoomModal').style.display = 'flex';
+}
+
+function closeEditRoomModal() {
+    document.getElementById('editRoomModal').style.display = 'none';
+}
+
 
 // Update financial charts with data
 function updateFinancialCharts(financialData) {
@@ -1488,6 +1547,22 @@ async function handleAddHotel(e) {
         showNotification('Failed to add hotel.', 'error');
     }
 }
+function closeAddHotelModal() {
+    const modal = document.getElementById('addHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Reset form
+        const form = document.getElementById('addHotelForm');
+        if (form) {
+            form.reset();
+            // Hide image preview
+            const preview = document.getElementById('addHotelImagePreview');
+            if (preview) {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+}
 
 // Handle edit hotel form submission
 async function handleEditHotel(e) {
@@ -1535,6 +1610,17 @@ async function handleEditHotel(e) {
     } catch (error) {
         console.error('Error updating hotel:', error);
         showNotification('Failed to update hotel.', 'error');
+    }
+}
+function closeEditHotelModal() {
+    const modal = document.getElementById('editHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Hide image preview
+        const preview = document.getElementById('editHotelImagePreview');
+        if (preview) {
+            preview.classList.add('hidden');
+        }
     }
 }
 
@@ -1895,6 +1981,23 @@ async function handleAddHotel(e) {
     }
 }
 
+function closeAddHotelModal() {
+    const modal = document.getElementById('addHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Reset form
+        const form = document.getElementById('addHotelForm');
+        if (form) {
+            form.reset();
+            // Hide image preview
+            const preview = document.getElementById('addHotelImagePreview');
+            if (preview) {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+}
+
 // Handle edit hotel form submission
 async function handleEditHotel(e) {
     e.preventDefault();
@@ -1941,6 +2044,18 @@ async function handleEditHotel(e) {
     } catch (error) {
         console.error('Error updating hotel:', error);
         showNotification('Failed to update hotel.', 'error');
+    }
+}
+
+function closeEditHotelModal() {
+    const modal = document.getElementById('editHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Hide image preview
+        const preview = document.getElementById('editHotelImagePreview');
+        if (preview) {
+            preview.classList.add('hidden');
+        }
     }
 }
 
@@ -2046,90 +2161,49 @@ function getRoleIdFromRoleName(roleName) {
         default:
             return 2; // Default to user role
     }
-} + value.toLocaleString();
-                                
-                            
-                      
-                    
-                
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-               
-                    
-                
-            
-        
-        
-        // Update payment methods chart
-        const paymentCtx = document.getElementById('paymentMethodsChart');
-        if (paymentCtx) {
-            // Destroy existing chart if it exists
-            if (paymentCtx.chart) {
-                paymentCtx.chart.destroy();
-            }
-            
-            // Create sample data for payment methods chart
-            const paymentMethods = ['Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer'];
-            const paymentData = [45, 30, 15, 10]; // Sample data
-            
-            paymentCtx.chart = new Chart(paymentCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: paymentMethods,
-                    datasets: [{
-                        label: 'Payment Methods',
-                        data: paymentData,
-                        backgroundColor: [
-                            'rgb(255, 99, 132)',
-                            'rgb(54, 162, 235)',
-                            'rgb(255, 205, 86)',
-                            'rgb(75, 192, 192)'
-                        ],
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Payment Methods Distribution'
-                        }
-                    }
-                }
-            });
-        }
-    trycatch (error) 
-        console.error('Error updating financial charts:', error);
-        showNotification('Failed to update financial charts.', 'error');
+}
+                                   
+// Update payment methods chart
+const paymentCtx = document.getElementById('paymentMethodsChart');
+if (paymentCtx) {
+    // Destroy existing chart if it exists
+    if (paymentCtx.chart) {
+        paymentCtx.chart.destroy();
+    }
     
-
-
-
-
-
-
-
-
-
-
-
+    // Create sample data for payment methods chart
+    const paymentMethods = ['Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer'];
+    const paymentData = [45, 30, 15, 10]; // Sample data
+    
+    paymentCtx.chart = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: paymentMethods,
+            datasets: [{
+                label: 'Payment Methods',
+                data: paymentData,
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)'
+                ],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Payment Methods Distribution'
+                }
+            }
+        }
+    });
+}
 
