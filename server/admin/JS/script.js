@@ -4,6 +4,12 @@ let currentUser = null;
 let currentMonth = new Date().getMonth() + 1; // Current month (1-12)
 let currentYear = new Date().getFullYear(); // Current year
 
+// Pagination state
+let currentHotelsPage = 1;
+let currentUsersPage = 1;
+let currentBookingsPage = 1;
+let currentTransactionsPage = 1;
+
 // Application Data
 let appData = {
     rooms: [],
@@ -761,24 +767,133 @@ function createRoomCard(room) {
     return card;
 }
 
-// View hotel details
-function viewHotel(hotelId) {
-    console.log('Viewing hotel:', hotelId);
-    showNotification(`View hotel functionality for hotel ID: ${hotelId} would be implemented here`, 'info');
+// Image carousel functions
+function previousImage(roomId) {
+    console.log('Previous image for room:', roomId);
+    showNotification(`Previous image functionality for room ID: ${roomId} would be implemented here`, 'info');
     
-    // In a real implementation, this would open a modal with hotel details
+    // In a real implementation, this would cycle to the previous image in the room's gallery
     // For now, we'll just show a notification
-    alert(`Viewing details for hotel ID: ${hotelId}\nIn a full implementation, this would show hotel details in a modal.`);
+    alert(`Previous image for room ID: ${roomId}\nIn a full implementation, this would show the previous image.`);
+}
+
+function nextImage(roomId) {
+    console.log('Next image for room:', roomId);
+    showNotification(`Next image functionality for room ID: ${roomId} would be implemented here`, 'info');
+    
+    // In a real implementation, this would cycle to the next image in the room's gallery
+    // For now, we'll just show a notification
+    alert(`Next image for room ID: ${roomId}\nIn a full implementation, this would show the next image.`);
+}
+
+// Toggle favorite
+function toggleFavorite(roomId) {
+    console.log('Toggling favorite for room:', roomId);
+    showNotification(`Toggle favorite functionality for room ID: ${roomId} would be implemented here`, 'info');
+    
+    // In a real implementation, this would toggle the room as a favorite
+    // For now, we'll just show a notification
+    alert(`Toggling favorite for room ID: ${roomId}\nIn a full implementation, this would mark the room as a favorite.`);
+}
+
+// View hotel details
+async function viewHotel(hotelId) {
+    console.log('Viewing hotel:', hotelId);
+    
+    try {
+        // Show loading indicator
+        showNotification('Loading hotel data...', 'info', 1000);
+        
+        // Fetch hotel data from API
+        const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch hotel data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const hotel = result.hotel;
+            
+            // Show hotel details in an alert for now
+            // In a real implementation, this would open a modal with hotel details
+            let hotelDetails = `Hotel Details:\n\n`;
+            hotelDetails += `ID: ${hotel.id}\n`;
+            hotelDetails += `Name: ${hotel.name}\n`;
+            hotelDetails += `Location: ${hotel.location}\n`;
+            hotelDetails += `Distance: ${hotel.distance}\n`;
+            hotelDetails += `Rating: ${hotel.rating}\n`;
+            hotelDetails += `Price: ${hotel.price}\n`;
+            hotelDetails += `Description: ${hotel.description}\n`;
+            hotelDetails += `Amenities: ${(hotel.amenities || []).join(', ')}\n`;
+            
+            alert(hotelDetails);
+        } else {
+            throw new Error(result.message || 'Failed to load hotel data');
+        }
+    } catch (error) {
+        console.error('Error loading hotel data:', error);
+        showNotification('Failed to load hotel data: ' + error.message, 'error');
+    }
 }
 
 // Edit hotel details
-function editHotel(hotelId) {
+async function editHotel(hotelId) {
     console.log('Editing hotel:', hotelId);
-    showNotification(`Edit hotel functionality for hotel ID: ${hotelId} would be implemented here`, 'info');
     
-    // In a real implementation, this would open a modal with hotel edit form
-    // For now, we'll just show a notification
-    alert(`Editing hotel ID: ${hotelId}\nIn a full implementation, this would open an edit form in a modal.`);
+    try {
+        // Show loading indicator
+        showNotification('Loading hotel data...', 'info', 1000);
+        
+        // Fetch hotel data from API
+        const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch hotel data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const hotel = result.hotel;
+            
+            // Populate the edit hotel form with hotel data
+            document.getElementById('editHotelId').value = hotel.id;
+            document.getElementById('editHotelName').value = hotel.name || '';
+            document.getElementById('editHotelLocation').value = hotel.location || '';
+            document.getElementById('editHotelDistance').value = hotel.distance || '';
+            document.getElementById('editHotelRating').value = hotel.rating || '';
+            document.getElementById('editHotelPrice').value = hotel.price || '';
+            document.getElementById('editHotelDescription').value = hotel.description || '';
+            document.getElementById('editHotelAmenities').value = (hotel.amenities || []).join(', ') || '';
+            
+            // Show the edit hotel modal
+            const modal = document.getElementById('editHotelModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Focus on the first input
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        } else {
+            throw new Error(result.message || 'Failed to load hotel data');
+        }
+    } catch (error) {
+        console.error('Error loading hotel data:', error);
+        showNotification('Failed to load hotel data: ' + error.message, 'error');
+    }
 }
 
 // Delete hotel
@@ -814,13 +929,386 @@ async function deleteHotel(hotelId) {
     }
 }
 
-// Placeholder functions for other data loading
-async function loadAvailableRoomsData() {
-    console.log('Loading available rooms data...');
+// User Management Functions
+
+// View user details
+async function viewUser(userId) {
+    console.log('Viewing user:', userId);
+    
+    try {
+        // Show loading indicator
+        showNotification('Loading user data...', 'info', 1000);
+        
+        // Fetch user data from API
+        const response = await fetch(`${API_BASE_URL}/auth/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch user data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const user = result.user;
+            
+            // Show user details in an alert for now
+            // In a real implementation, this would open a modal with user details
+            let userDetails = `User Details:\n\n`;
+            userDetails += `ID: ${user.id}\n`;
+            userDetails += `Name: ${user.name}\n`;
+            userDetails += `Email: ${user.email}\n`;
+            userDetails += `Phone: ${user.phone || 'N/A'}\n`;
+            userDetails += `Role: ${user.role}\n`;
+            userDetails += `Created At: ${formatDate(user.created_at)}\n`;
+            
+            alert(userDetails);
+        } else {
+            throw new Error(result.message || 'Failed to load user data');
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        showNotification('Failed to load user data: ' + error.message, 'error');
+    }
 }
 
-async function loadBookingListData() {
-    console.log('Loading booking list data...');
+// Edit user details
+async function editUser(userId) {
+    console.log('Editing user:', userId);
+    
+    try {
+        // Show loading indicator
+        showNotification('Loading user data...', 'info', 1000);
+        
+        // Fetch user data from API
+        const response = await fetch(`${API_BASE_URL}/auth/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch user data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const user = result.user;
+            
+            // Populate the edit user form with user data
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.name || '';
+            document.getElementById('editUserEmail').value = user.email || '';
+            document.getElementById('editUserPhone').value = user.phone || '';
+            
+            // Show the edit user modal
+            const modal = document.getElementById('editUserModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Focus on the first input
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        } else {
+            throw new Error(result.message || 'Failed to load user data');
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        showNotification('Failed to load user data: ' + error.message, 'error');
+    }
+}
+
+// Pagination Functions
+
+// Load hotels page
+async function loadHotelsPage(pageNumber) {
+    console.log('Loading hotels page:', pageNumber);
+    
+    try {
+        // Update current page
+        currentHotelsPage = pageNumber;
+        
+        // Show loading indicator
+        const roomsGrid = document.getElementById('roomsGrid');
+        if (roomsGrid) {
+            roomsGrid.innerHTML = '<div class="loading w-full flex justify-center items-center"><div class="spinner"></div><div class="ml-2">Loading hotels...</div></div>';
+        }
+        
+        // Fetch hotels data with pagination
+        const response = await fetch(`${API_BASE_URL}/hotels?page=${pageNumber}&limit=10`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser?.token}`
+            }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            // Transform hotel data to match room structure
+            appData.rooms = result.hotels.map((hotel, index) => ({
+                id: hotel.id || index,
+                hname: hotel.name,
+                number: `${hotel.id || index}`,
+                type: hotel.name,
+                floor: 'N/A',
+                bedType: 'N/A',
+                price: parseFloat(hotel.price),
+                status: 'Available',
+                rating: parseFloat(hotel.rating),
+                reviews: hotel.reviews ? hotel.reviews.length : 0,
+                images: hotel.gallery || [hotel.image]
+            }));
+            
+            renderRoomsContent();
+            
+            // Update pagination controls
+            updateHotelsPagination(result.pagination);
+        } else {
+            showNotification('Failed to load hotels data', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading hotels data:', error);
+        showNotification('Error loading hotels data', 'error');
+    }
+}
+
+// Update hotels pagination controls
+function updateHotelsPagination(pagination) {
+    const prevBtn = document.getElementById('prevHotelsPage');
+    const nextBtn = document.getElementById('nextHotelsPage');
+    const pageInfo = document.getElementById('hotelsPageInfo');
+    const currentPageEl = document.getElementById('currentHotelsPage');
+    const totalPagesEl = document.getElementById('totalHotelsPages');
+    const totalCountEl = document.getElementById('hotelsTotalCount');
+    
+    if (prevBtn) {
+        prevBtn.disabled = pagination.currentPage <= 1;
+        prevBtn.onclick = () => loadHotelsPage(pagination.currentPage - 1);
+    }
+    
+    if (nextBtn) {
+        nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
+        nextBtn.onclick = () => loadHotelsPage(pagination.currentPage + 1);
+    }
+    
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages}`;
+    }
+    
+    if (currentPageEl) {
+        currentPageEl.textContent = pagination.currentPage;
+    }
+    
+    if (totalPagesEl) {
+        totalPagesEl.textContent = pagination.totalPages;
+    }
+    
+    if (totalCountEl) {
+        totalCountEl.textContent = pagination.totalCount;
+    }
+}
+
+// Load users page
+async function loadUsersPage(pageNumber) {
+    console.log('Loading users page:', pageNumber);
+    
+    try {
+        // Update current page
+        currentUsersPage = pageNumber;
+        
+        // Show loading state
+        const tableBody = document.getElementById('usersTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-4">Loading users...</td></tr>';
+        }
+        
+        // Fetch users from API with pagination
+        const response = await fetch(`${API_BASE_URL}/auth?page=${pageNumber}&limit=10`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update users table
+            if (tableBody) {
+                if (result.users && result.users.length > 0) {
+                    tableBody.innerHTML = result.users.map(user => `
+                        <tr>
+                            <td class="text-left p-4 border-b">${user.id}</td>
+                            <td class="text-left p-4 border-b">${user.name}</td>
+                            <td class="text-left p-4 border-b">${user.email}</td>
+                            <td class="text-left p-4 border-b">${user.role}</td>
+                            <td class="text-left p-4 border-b"><span class="status-badge status-active">Active</span></td>
+                            <td class="text-left p-4 border-b">${formatDate(user.created_at)}</td>
+                            <td class="text-left p-4 border-b">
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="viewUser(${user.id})" title="View">
+                                        <span>👁️</span>
+                                    </button>
+                                    <button class="action-btn edit" onclick="editUser(${user.id})" title="Edit">
+                                        <span>✏️</span>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteUser(${user.id})" title="Delete">
+                                        <span>🗑️</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-4">No users found</td></tr>';
+                }
+            }
+            
+            // Update pagination info
+            const totalCountEl = document.getElementById('usersTotalCount');
+            const currentPageEl = document.getElementById('currentUsersPage');
+            const totalPagesEl = document.getElementById('totalUsersPages');
+            
+            if (totalCountEl) totalCountEl.textContent = result.pagination.totalCount || '0';
+            if (currentPageEl) currentPageEl.textContent = result.pagination.currentPage || '1';
+            if (totalPagesEl) totalPagesEl.textContent = result.pagination.totalPages || '1';
+            
+            // Update pagination buttons
+            const prevBtn = document.getElementById('prevUsersPage');
+            const nextBtn = document.getElementById('nextUsersPage');
+            
+            if (prevBtn) {
+                prevBtn.disabled = result.pagination.currentPage <= 1;
+                prevBtn.onclick = () => loadUsersPage(result.pagination.currentPage - 1);
+            }
+            if (nextBtn) {
+                nextBtn.disabled = result.pagination.currentPage >= result.pagination.totalPages;
+                nextBtn.onclick = () => loadUsersPage(result.pagination.currentPage + 1);
+            }
+        } else {
+            throw new Error(result.message || 'Failed to load users');
+        }
+        
+        console.log('Users page loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading users page:', error);
+        showNotification('Failed to load users page.', 'error');
+        
+        // Show error in table
+        const tableBody = document.getElementById('usersTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-red-500">Failed to load users</td></tr>';
+        }
+    }
+}
+
+// Load bookings page
+async function loadBookingsPage(pageNumber) {
+    console.log('Loading bookings page:', pageNumber);
+    
+    try {
+        // Update current page
+        currentBookingsPage = pageNumber;
+        
+        // Show loading state
+        const tableBody = document.getElementById('bookingsTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4">Loading bookings...</td></tr>';
+        }
+        
+        // Fetch bookings from API with pagination
+        const response = await fetch(`${API_BASE_URL}/bookings?page=${pageNumber}&limit=10`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch bookings');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update bookings table
+            if (tableBody) {
+                if (result.bookings && result.bookings.length > 0) {
+                    tableBody.innerHTML = result.bookings.map(booking => `
+                        <tr>
+                            <td class="text-left p-4 border-b">${booking.id}</td>
+                            <td class="text-left p-4 border-b">${booking.hotel_name}</td>
+                            <td class="text-left p-4 border-b">${booking.guest_name}</td>
+                            <td class="text-left p-4 border-b">${formatDate(booking.check_in)}</td>
+                            <td class="text-left p-4 border-b">${formatDate(booking.check_out)}</td>
+                            <td class="text-left p-4 border-b"><span class="status-badge status-${booking.status}">${booking.status}</span></td>
+                            <td class="text-left p-4 border-b">${formatCurrency(booking.total_price)}</td>
+                            <td class="text-left p-4 border-b">
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="viewBooking(${booking.id})" title="View">
+                                        <span>👁️</span>
+                                    </button>
+                                    <button class="action-btn edit" onclick="editBooking(${booking.id})" title="Edit">
+                                        <span>✏️</span>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteBooking(${booking.id})" title="Delete">
+                                        <span>🗑️</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4">No bookings found</td></tr>';
+                }
+            }
+            
+            // Update pagination info
+            const totalCountEl = document.getElementById('bookingsTotalCount');
+            const currentPageEl = document.getElementById('currentBookingsPage');
+            const totalPagesEl = document.getElementById('totalBookingsPages');
+            
+            if (totalCountEl) totalCountEl.textContent = result.pagination.totalCount || '0';
+            if (currentPageEl) currentPageEl.textContent = result.pagination.currentPage || '1';
+            if (totalPagesEl) totalPagesEl.textContent = result.pagination.totalPages || '1';
+            
+            // Update pagination buttons
+            const prevBtn = document.getElementById('prevBookingsPage');
+            const nextBtn = document.getElementById('nextBookingsPage');
+            
+            if (prevBtn) {
+                prevBtn.disabled = result.pagination.currentPage <= 1;
+                prevBtn.onclick = () => loadBookingsPage(result.pagination.currentPage - 1);
+            }
+            if (nextBtn) {
+                nextBtn.disabled = result.pagination.currentPage >= result.pagination.totalPages;
+                nextBtn.onclick = () => loadBookingsPage(result.pagination.currentPage + 1);
+            }
+        } else {
+            throw new Error(result.message || 'Failed to load bookings');
+        }
+        
+        console.log('Bookings page loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading bookings page:', error);
+        showNotification('Failed to load bookings page.', 'error');
+        
+        // Show error in table
+        const tableBody = document.getElementById('bookingsTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-red-500">Failed to load bookings</td></tr>';
+        }
+    }
 }
 
 // User Management Functions
@@ -944,7 +1432,7 @@ async function loadBookingsData() {
                                 <button class="action-btn view" onclick="viewBooking(${booking.id})" title="View">
                                     <span>👁️</span>
                                 </button>
-                                <button class="action-btn edit" onclick="editHotel(${booking.id})" title="Edit">
+                                <button class="action-btn edit" onclick="editBooking(${booking.id})" title="Edit">
                                     <span>✏️</span>
                                 </button>
                                 <button class="action-btn delete" onclick="deleteBooking(${booking.id})" title="Delete">
@@ -1853,17 +2341,116 @@ function showNotification(message, type = 'info', duration = 3000) {
     
     return notification;
 }
-// Placeholder functions
+// Image upload listeners
 function setupImageUploadListeners() {
-    console.log('Image upload listeners would be set up here');
+    console.log('Setting up image upload listeners');
+    
+    // Add hotel form image upload
+    const addHotelImage = document.getElementById('addHotelImage');
+    const addHotelImagePreview = document.getElementById('addHotelImagePreview');
+    
+    if (addHotelImage && addHotelImagePreview) {
+        addHotelImage.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = addHotelImagePreview.querySelector('img');
+                    if (img) {
+                        img.src = e.target.result;
+                        addHotelImagePreview.classList.remove('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Edit hotel form image upload
+    const editHotelImage = document.getElementById('editHotelImage');
+    const editHotelImagePreview = document.getElementById('editHotelImagePreview');
+    
+    if (editHotelImage && editHotelImagePreview) {
+        editHotelImage.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = editHotelImagePreview.querySelector('img');
+                    if (img) {
+                        img.src = e.target.result;
+                        editHotelImagePreview.classList.remove('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 }
 
 function setupModalCloseHandlers() {
     console.log('Modal close handlers would be set up here');
 }
 
-function handleGlobalSearch(e) {
-    console.log('Global search:', e.target.value);
+
+// Global search handler
+async function handleGlobalSearch(e) {
+    const searchTerm = e.target.value.trim();
+    console.log('Global search:', searchTerm);
+    
+    // Debounce search to avoid too many API calls
+    clearTimeout(window.globalSearchTimeout);
+    window.globalSearchTimeout = setTimeout(async () => {
+        if (searchTerm.length > 0) {
+            showNotification('Searching...', 'info', 1000);
+            
+            try {
+                // Search across multiple endpoints
+                const searchPromises = [
+                    fetch(`${API_BASE_URL}/hotels?search=${encodeURIComponent(searchTerm)}`, {
+                        headers: {
+                            'Authorization': `Bearer ${currentUser.token}`
+                        }
+                    }),
+                    fetch(`${API_BASE_URL}/auth?search=${encodeURIComponent(searchTerm)}`, {
+                        headers: {
+                            'Authorization': `Bearer ${currentUser.token}`
+                        }
+                    }),
+                    fetch(`${API_BASE_URL}/bookings?search=${encodeURIComponent(searchTerm)}`, {
+                        headers: {
+                            'Authorization': `Bearer ${currentUser.token}`
+                        }
+                    })
+                ];
+                
+                const responses = await Promise.all(searchPromises);
+                const results = await Promise.all(responses.map(r => r.json()));
+                
+                // Process results
+                const hotels = results[0].success ? results[0].hotels : [];
+                const users = results[1].success ? results[1].users : [];
+                const bookings = results[2].success ? results[2].bookings : [];
+                
+                console.log('Search results:', { hotels, users, bookings });
+                
+                // Show notification with results count
+                const totalResults = hotels.length + users.length + bookings.length;
+                showNotification(`Found ${totalResults} results for "${searchTerm}"`, 'success');
+                
+                // In a real implementation, this would update the UI with search results
+                // For now, we'll just show an alert
+                alert(`Search Results for "${searchTerm}":
+Hotels: ${hotels.length}
+Users: ${users.length}
+Bookings: ${bookings.length}`);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showNotification('Search failed: ' + error.message, 'error');
+            }
+        }
+    }, 300); // 300ms debounce
 }
 
 function handleRoomSearch(e) {
@@ -2207,3 +2794,201 @@ if (paymentCtx) {
     });
 }
 
+// Search Functions
+
+
+
+// Room search handler
+async function handleRoomSearch(e) {
+    const searchTerm = e.target.value.trim();
+    console.log('Room search:', searchTerm);
+    
+    // Debounce search to avoid too many API calls
+    clearTimeout(window.roomSearchTimeout);
+    window.roomSearchTimeout = setTimeout(async () => {
+        if (searchTerm.length > 0) {
+            try {
+                // Search hotels
+                const response = await fetch(`${API_BASE_URL}/hotels?search=${encodeURIComponent(searchTerm)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentUser.token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Transform hotel data to match room structure
+                    appData.rooms = result.hotels.map((hotel, index) => ({
+                        id: hotel.id || index,
+                        hname: hotel.name,
+                        number: `${hotel.id || index}`,
+                        type: hotel.name,
+                        floor: 'N/A',
+                        bedType: 'N/A',
+                        price: parseFloat(hotel.price),
+                        status: 'Available',
+                        rating: parseFloat(hotel.rating),
+                        reviews: hotel.reviews ? hotel.reviews.length : 0,
+                        images: hotel.gallery || [hotel.image]
+                    }));
+                    
+                    renderRoomsContent();
+                    showNotification(`Found ${result.hotels.length} hotels matching "${searchTerm}"`, 'success');
+                } else {
+                    showNotification('Search failed: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Room search error:', error);
+                showNotification('Room search failed: ' + error.message, 'error');
+            }
+        } else {
+            // If search term is empty, reload all rooms
+            loadRoomsData();
+        }
+    }, 300); // 300ms debounce
+}
+
+ 
+// Booking Management Functions 
+// Booking Management Functions
+
+// View booking details
+async function viewBooking(bookingId) {
+    console.log('Viewing booking:', bookingId);
+    
+    try {
+        // Show loading indicator
+        showNotification('Loading booking data...', 'info', 1000);
+        
+        // Fetch booking data from API
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch booking data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const booking = result.booking;
+            
+            // Show booking details in an alert for now
+            // In a real implementation, this would open a modal with booking details
+            let bookingDetails = `Booking Details:\n\n`;
+            bookingDetails += `ID: ${booking.id}\n`;
+            bookingDetails += `Hotel: ${booking.hotel_name}\n`;
+            bookingDetails += `Guest: ${booking.guest_name}\n`;
+            bookingDetails += `Email: ${booking.guest_email}\n`;
+            bookingDetails += `Phone: ${booking.guest_phone || 'N/A'}\n`;
+            bookingDetails += `Check-in: ${formatDate(booking.check_in)}\n`;
+            bookingDetails += `Check-out: ${formatDate(booking.check_out)}\n`;
+            bookingDetails += `Guests: ${booking.guests}\n`;
+            bookingDetails += `Rooms: ${booking.rooms}\n`;
+            bookingDetails += `Total Price: ${formatCurrency(booking.total_price)}\n`;
+            bookingDetails += `Status: ${booking.status}\n`;
+            bookingDetails += `Created At: ${formatDate(booking.created_at)}\n`;
+            
+            alert(bookingDetails);
+        } else {
+            throw new Error(result.message || 'Failed to load booking data');
+        }
+    } catch (error) {
+        console.error('Error loading booking data:', error);
+        showNotification('Failed to load booking data: ' + error.message, 'error');
+    }
+}
+
+// Edit booking details
+async function editBooking(bookingId) {
+    console.log('Editing booking:', bookingId);
+    
+    try {
+        // Show loading indicator
+        showNotification('Loading booking data...', 'info', 1000);
+        
+        // Fetch booking data from API
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch booking data');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const booking = result.booking;
+            
+            // Populate the edit booking form with booking data
+            document.getElementById('editBookingId').value = booking.id;
+            document.getElementById('editBookingHotel').value = booking.hotel_name || '';
+            document.getElementById('editBookingGuest').value = booking.guest_name || '';
+            document.getElementById('editBookingEmail').value = booking.guest_email || '';
+            document.getElementById('editBookingPhone').value = booking.guest_phone || '';
+            document.getElementById('editBookingCheckIn').value = booking.check_in ? booking.check_in.split('T')[0] : '';
+            document.getElementById('editBookingCheckOut').value = booking.check_out ? booking.check_out.split('T')[0] : '';
+            document.getElementById('editBookingGuests').value = booking.guests || '';
+            document.getElementById('editBookingRooms').value = booking.rooms || '';
+            document.getElementById('editBookingTotal').value = booking.total_price || '';
+            document.getElementById('editBookingStatus').value = booking.status || 'pending';
+            
+            // Show the edit booking modal
+            const modal = document.getElementById('editBookingModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Focus on the first input
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        } else {
+            throw new Error(result.message || 'Failed to load booking data');
+        }
+    } catch (error) {
+        console.error('Error loading booking data:', error);
+        showNotification('Failed to load booking data: ' + error.message, 'error');
+    }
+}
+
+// Delete booking
+async function deleteBooking(bookingId) {
+    if (!confirm('Are you sure you want to delete this booking?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete booking');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Booking deleted successfully!', 'success');
+            // Reload bookings data
+            loadBookingsData();
+        } else {
+            throw new Error(result.message || 'Failed to delete booking');
+        }
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        showNotification('Failed to delete booking: ' + error.message, 'error');
+    }
+}
