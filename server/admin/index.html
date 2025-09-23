@@ -419,10 +419,15 @@
       <div id="bookingsContent" class="page-content p-8 flex-1 overflow-y-auto" style="display: none;">
         <div class="page-header flex justify-between items-center mb-8">
           <h1 class="page-title text-3xl font-bold text-gray-800">Booking Management</h1>
-          <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
-            <span class="search-icon mr-2 text-gray-500">🔍</span>
-            <input type="text" placeholder="Search bookings..." id="bookingSearch"
-              class="bg-transparent outline-none w-full text-sm">
+          <div class="flex items-center gap-4">
+            <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
+              <span class="search-icon mr-2 text-gray-500">🔍</span>
+              <input type="text" placeholder="Search bookings..." id="bookingSearch"
+                class="bg-transparent outline-none w-full text-sm">
+            </div>
+            <button
+              class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-700"
+              onclick="openAddBookingModal()">Add New Booking</button>
           </div>
         </div>
 
