@@ -74,9 +74,12 @@ async function editBooking(bookingId) {
         if (result.success) {
             const booking = result.booking;
             
+            // Open the edit booking modal
+            openEditBookingModal(bookingId);
+            
             // Populate the edit booking form with booking data
             document.getElementById('editBookingId').value = booking.id;
-            document.getElementById('editBookingHotel').value = booking.hotel_name || '';
+            document.getElementById('editBookingHotel').value = booking.hotel_id || '';
             document.getElementById('editBookingGuest').value = booking.guest_name || '';
             document.getElementById('editBookingEmail').value = booking.guest_email || '';
             document.getElementById('editBookingPhone').value = booking.guest_phone || '';
@@ -86,18 +89,6 @@ async function editBooking(bookingId) {
             document.getElementById('editBookingRooms').value = booking.rooms || '';
             document.getElementById('editBookingTotal').value = booking.total_price || '';
             document.getElementById('editBookingStatus').value = booking.status || 'pending';
-            
-            // Show the edit booking modal
-            const modal = document.getElementById('editBookingModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                
-                // Focus on the first input
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) {
-                    setTimeout(() => firstInput.focus(), 100);
-                }
-            }
         } else {
             throw new Error(result.message || 'Failed to load booking data');
         }
@@ -107,35 +98,26 @@ async function editBooking(bookingId) {
     }
 }
 
-// Delete booking
-async function deleteBooking(bookingId) {
-    if (!confirm('Are you sure you want to delete this booking?')) {
-        return;
-    }
-    
+// Delete booking\nasync function deleteBooking(bookingId) {\n    if (!confirm('Are you sure you want to delete this booking?')) {\n        return;\n    }\n    \n    try {\n        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {\n            method: 'DELETE',\n            headers: {\n                'Authorization': `Bearer ${currentUser.token}`\n            }\n        });\n        \n        if (!response.ok) {\n            throw new Error('Failed to delete booking');\n        }\n        \n        const result = await response.json();\n        \n        if (result.success) {\n            showNotification('Booking deleted successfully!', 'success');\n            // Reload bookings data\n            loadBookingsData();\n        } else {\n            throw new Error(result.message || 'Failed to delete booking');\n        }\n    } catch (error) {\n        console.error('Error deleting booking:', error);\n        showNotification('Failed to delete booking: ' + error.message, 'error');\n    }\n}\n\n// Process payment for a booking (fake implementation)
+async function processBookingPayment(bookingId, amount) {
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${currentUser.token}`
+        // Set the booking ID and amount in the payment form
+        document.getElementById('paymentBookingId').value = bookingId;
+        document.getElementById('paymentAmount').value = amount;
+        
+        // Show the payment modal
+        const modal = document.getElementById('processPaymentModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            
+            // Focus on the first input
+            const firstInput = modal.querySelector('input, textarea, select');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
             }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to delete booking');
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('Booking deleted successfully!', 'success');
-            // Reload bookings data
-            loadBookingsData();
-        } else {
-            throw new Error(result.message || 'Failed to delete booking');
         }
     } catch (error) {
-        console.error('Error deleting booking:', error);
-        showNotification('Failed to delete booking: ' + error.message, 'error');
+        console.error('Error opening payment modal:', error);
+        showNotification('Failed to open payment modal: ' + error.message, 'error');
     }
 }

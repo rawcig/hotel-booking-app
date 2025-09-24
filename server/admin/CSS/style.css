@@ -105,6 +105,46 @@ body {
     justify-content: space-between;
 }
 
+
+.chart-container {
+  width: 600px;          /* or use 100% for full width */
+  max-width: 100%;       /* keep it responsive */
+  height: auto;
+  position: relative;    /* useful if absolutely positioning children */
+  overflow: hidden;
+  
+  display: flex;         /* enable flexbox */
+  flex-direction: column;
+  align-items: center;   /* center canvas horizontally */
+  margin: auto;          /* center the container itself if needed */
+}
+
+.chart-container canvas {
+  width: 100% !important;   /* canvas scales with container */
+  height: auto !important;  /* maintain aspect ratio */
+  display: block;           /* removes inline spacing */
+}
+
+.chart-container #paymentMethodsChart {
+  max-height: 400px;
+  max-width: 400px;    /* cap width */
+  margin: auto;        /* center inside container */
+}
+
+.reportsContent .content-section,
+.financialsContent .content-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center everything inside section */
+}
+
+.content-section canvas {
+  max-width: 600px; /* limit max size */
+  width: 100%;      /* responsive */
+  height: 400px;    /* fixed height if needed */
+}
+
+
 /* Status Badges - Tailwind colors with custom styling */
 .status-badge {
     padding: 6px 14px;
@@ -368,4 +408,20 @@ body {
     .auth-container {
         margin: 10px;
     }
+}
+
+.modal-content {
+  width: 400px !important;        /* fixed width */
+  height: 600px !important;       /* fixed height */
+  max-width: none !important;     /* override Tailwind max-width */
+  max-height: none !important;    /* override Tailwind max-height */
+  min-width: 400px !important;    /* optional: prevent shrinking */
+  min-height: 600px !important;   /* optional: prevent shrinking */
+  overflow: hidden !important;    /* hide overflowing content */
+  position: relative !important;  /* ensure proper positioning */
+  flex: none !important;          /* override flex-grow/shrink */
+}
+.modal-body {
+  height: calc(100% - 64px - 64px) !important; /* subtract header/footer height */
+  overflow-y: auto !important;                  /* scroll body if needed */
 }
