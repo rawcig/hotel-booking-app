@@ -1,4 +1,4 @@
-// routes/hotels.js
+// routes/hotels.js - BACKUP VERSION
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -6,11 +6,11 @@ const { v4: uuidv4 } = require('uuid');
 const { createClient } = require('@supabase/supabase-js'); // Creating a new client with service role
 const { authenticateAdmin, authorizeAdmin } = require('../middleware/auth');
 
-// Get Supabase config from environment - USE SERVICE ROLE KEY FOR ADMIN OPERATIONS
+// Get Supabase config from environment
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-// Create a service role client specifically for admin operations to bypass RLS
+// Create a service role client specifically for admin operations
 const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey 
   ? createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
@@ -37,7 +37,7 @@ const upload = multer({
   }
 });
 
-// Upload hotel image (Admin only)
+// Upload hotel image
 router.post('/upload-image', authenticateAdmin, upload.single('file'), async (req, res) => {
   try {
     // Check if file was uploaded
@@ -53,10 +53,10 @@ router.post('/upload-image', authenticateAdmin, upload.single('file'), async (re
     const fileName = `${uuidv4()}.${fileExtension}`;
     const filePath = `hotels/${fileName}`;
     
-    // Upload to Supabase Storage using the admin client to bypass RLS
-    const { data, error } = await supabaseAdmin
+    // Upload to Supabase Storage
+    const { data, error } = supabaseAdmin
       .storage
-      .from('hotel-images') // Fixed bucket name
+      .from('hotel-images')
       .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
         upsert: false
@@ -116,7 +116,7 @@ router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, category } = req.query;
     
-    // Fetch hotels from Supabase using admin client to ensure consistent access
+    // Fetch hotels from Supabase
     let query = supabaseAdmin.from('hotels').select('*');
     
     // Apply search filter
@@ -189,7 +189,7 @@ router.get('/:id', async (req, res) => {
       });
     }
     
-    const { data, error } = await supabaseAdmin
+    const { data, error } = supabaseAdmin
       .from('hotels')
       .select('*')
       .eq('id', hotelId)
@@ -234,7 +234,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
       });
     }
     
-    const { data, error } = await supabaseAdmin
+    const { data, error } = supabaseAdmin
       .from('hotels')
       .insert([hotelData])
       .select()
@@ -259,7 +259,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Update a hotel (Admin only) - USING SERVICE ROLE CLIENT TO BYPASS RLS
+// Update a hotel (Admin only) - USING SERVICE ROLE CLIENT
 router.put('/:id', authenticateAdmin, async (req, res) => {
   try {
     const hotelId = parseInt(req.params.id);
@@ -272,14 +272,12 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
       });
     }
     
-    console.log('Received update request for hotel ID:', hotelId, 'with data:', hotelData);
-    
     // Sanitize and validate the data
     // Remove id from update data if present
     delete hotelData.id;
     
-    // Get the existing hotel record to get current values for fields not being updated
-    const { data: existingHotel, error: fetchError } = await supabaseAdmin
+    // Get the existing hotel record to get current values for required fields not being updated
+    const { data: existingHotel, error: fetchError } = supabaseAdmin
       .from('hotels')
       .select('*')
       .eq('id', hotelId)
@@ -301,119 +299,72 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
       });
     }
     
-    // Prepare update data by merging with existing data for fields not provided
-    const updateFields = {};
-    
-    // Handle each field individually
-    if (hotelData.name !== undefined && hotelData.name !== null && hotelData.name !== '') {
-      updateFields.name = hotelData.name.trim();
-    } else {
-      updateFields.name = existingHotel.name;
+    // Merge incoming data with existing data for required fields that aren't being updated
+    if (hotelData.name === undefined || hotelData.name === null) {
+      hotelData.name = existingHotel.name;
     }
     
-    if (hotelData.location !== undefined && hotelData.location !== null && hotelData.location !== '') {
-      updateFields.location = hotelData.location.trim();
-    } else {
-      updateFields.location = existingHotel.location;
+    if (hotelData.location === undefined || hotelData.location === null) {
+      hotelData.location = existingHotel.location;
     }
     
-    if (hotelData.distance !== undefined && hotelData.distance !== null && hotelData.distance !== '') {
-      updateFields.distance = hotelData.distance.trim();
-    } else {
-      updateFields.distance = existingHotel.distance;
-    }
-    
-    if (hotelData.rating !== undefined && hotelData.rating !== null && hotelData.rating !== '') {
-      const parsedRating = parseFloat(hotelData.rating);
-      if (!isNaN(parsedRating)) {
-        updateFields.rating = parsedRating;
-      } else {
-        updateFields.rating = existingHotel.rating; // Keep existing value if invalid
-      }
-    } else {
-      updateFields.rating = existingHotel.rating;
-    }
-    
-    if (hotelData.price !== undefined && hotelData.price !== null && hotelData.price !== '') {
-      const parsedPrice = parseFloat(hotelData.price);
-      if (!isNaN(parsedPrice)) {
-        updateFields.price = parsedPrice;
-      } else {
-        updateFields.price = existingHotel.price; // Keep existing value if invalid
-      }
-    } else {
-      updateFields.price = existingHotel.price;
-    }
-    
-    if (hotelData.image !== undefined && hotelData.image !== null && hotelData.image !== '') {
-      updateFields.image = hotelData.image;
-    } else {
-      updateFields.image = existingHotel.image;
-    }
-    
-    if (hotelData.description !== undefined && hotelData.description !== null && hotelData.description !== '') {
-      updateFields.description = hotelData.description.trim();
-    } else {
-      updateFields.description = existingHotel.description;
-    }
-    
-    if (hotelData.amenities !== undefined && hotelData.amenities !== null) {
-      if (Array.isArray(hotelData.amenities)) {
-        updateFields.amenities = hotelData.amenities;
-      } else if (typeof hotelData.amenities === 'string') {
-        // Convert comma-separated string to array
-        updateFields.amenities = hotelData.amenities.split(',').map(a => a.trim()).filter(a => a);
-      } else {
-        updateFields.amenities = existingHotel.amenities; // Keep existing if invalid format
-      }
-    } else {
-      updateFields.amenities = existingHotel.amenities;
-    }
-    
-    if (hotelData.gallery !== undefined && hotelData.gallery !== null) {
-      if (Array.isArray(hotelData.gallery)) {
-        updateFields.gallery = hotelData.gallery;
-      } else {
-        updateFields.gallery = existingHotel.gallery; // Keep existing if not array
-      }
-    } else {
-      updateFields.gallery = existingHotel.gallery;
-    }
-    
-    if (hotelData.coordinates !== undefined && hotelData.coordinates !== null) {
-      updateFields.coordinates = hotelData.coordinates; // Keep as object
-    } else {
-      updateFields.coordinates = existingHotel.coordinates; // Keep existing if not provided
-    }
-    
-    // Validate required fields
-    if (!updateFields.name) {
+    // Validate that required fields now have values
+    if (!hotelData.name) {
       return res.status(400).json({
         success: false,
         message: 'Name is required'
       });
     }
     
-    if (!updateFields.location) {
+    if (!hotelData.location) {
       return res.status(400).json({
         success: false,
         message: 'Location is required'
       });
     }
     
-    console.log('Final update data for hotel:', hotelId, updateFields);
+    // Convert rating and price to proper types if provided
+    if (hotelData.rating !== undefined && hotelData.rating !== null && hotelData.rating !== '') {
+      hotelData.rating = parseFloat(hotelData.rating);
+      if (isNaN(hotelData.rating)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rating must be a valid number'
+        });
+      }
+    }
     
-    // Use the service role client for the update operation to bypass RLS
+    if (hotelData.price !== undefined && hotelData.price !== null && hotelData.price !== '') {
+      hotelData.price = parseFloat(hotelData.price);
+      if (isNaN(hotelData.price)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Price must be a valid number'
+        });
+      }
+    }
+    
+    // Process amenities if provided
+    if (hotelData.amenities && Array.isArray(hotelData.amenities)) {
+      // It's already an array, pass as is
+    } else if (hotelData.amenities && typeof hotelData.amenities === 'string') {
+      // Convert comma-separated string to array
+      hotelData.amenities = hotelData.amenities.split(',').map(a => a.trim()).filter(a => a);
+    }
+    
+    console.log('Updating hotel with data:', hotelId, hotelData);
+    
+    // Use the service role client for the update operation
     const { data: updatedHotel, error: updateError } = await supabaseAdmin
       .from('hotels')
-      .update(updateFields, { returning: 'representation' }) // Ensure it returns the updated data
+      .update(hotelData, { returning: 'representation' }) // Ensure it returns the updated data
       .eq('id', hotelId)
       .select()
       .single(); // Use single() instead of maybeSingle() to ensure proper error handling
     
     if (updateError) {
       console.error('Supabase update error:', updateError);
-      return res.status(500).json({ 
+      return res.status(400).json({ 
         success: false,
         message: `Database error: ${updateError.message}`,
         error: updateError.message,
@@ -442,7 +393,7 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
     console.error('Server error in hotel update:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Server error during update',
+      message: 'Server error',
       error: error.message 
     });
   }
@@ -459,7 +410,7 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
       });
     }
     
-    const { data, error } = await supabaseAdmin
+    const { data, error } = supabaseAdmin
       .from('hotels')
       .delete()
       .eq('id', hotelId);

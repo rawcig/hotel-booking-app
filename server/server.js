@@ -23,11 +23,13 @@ app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/auth'));  // Add this line to map /api/users to the same routes as /api/auth
 app.use('/api/simple-auth', require('./routes/simple-auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/financial', require('./routes/financial'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/hotels', require('./routes/hotels'));
+app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/bookings', require('./routes/bookings'));
 
 // Redirect root to admin portal

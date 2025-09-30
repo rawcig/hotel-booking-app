@@ -1,12 +1,12 @@
+import HotelCard from '@/components/HotelCard';
+import SimpleNotificationIcon from '@/components/SimpleNotificationIcon';
 import { images } from '@/constants/images';
+import { useUser } from '@/context/UserContext';
 import { useHotels } from '@/hooks/useHotels';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import HotelCard from '@/components/HotelCard';
-import { useUser } from '@/context/UserContext';
-import SimpleNotificationIcon from '@/components/SimpleNotificationIcon';
 
 export default function App() {
   const { user } = useUser();
@@ -83,7 +83,7 @@ export default function App() {
                   <TouchableOpacity onPress={()=>router.push('/(tabs)/profile')}>
                      <View className="relative mr-4">
                             <Image 
-                              source={images.userMale } 
+                              source={images.avatar1 } 
                               className="w-12 h-12 rounded-full"
                               resizeMode="cover"
                             />

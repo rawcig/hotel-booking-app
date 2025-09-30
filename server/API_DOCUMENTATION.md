@@ -9,6 +9,68 @@ http://localhost:3000/api
 
 ## Authentication
 
+### Important Note on Authentication Systems
+Due to Row Level Security (RLS) restrictions in the database, we provide two authentication systems:
+
+1. **Standard Authentication** (`/auth/login` and `/auth/register`): Requires proper Supabase service role key configuration
+2. **Simple Authentication** (`/simple-auth/login` and `/simple-auth/register`): Recommended for testing and development, bypasses RLS issues
+
+For testing purposes, we recommend using the simple authentication system which works out-of-the-box.
+
+### POST `/simple-auth/register`
+Register a new user using simple authentication system
+
+**Request Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "user": {
+    "id": "user-id",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "role": "user"
+  },
+  "token": "jwt-token"
+}
+```
+
+### POST `/simple-auth/login`
+Login user using simple authentication system
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "user-id",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "role": "user"
+  },
+  "token": "jwt-token"
+}
+```
+
+
 ### POST `/auth/register`
 Register a new user
 

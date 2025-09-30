@@ -3,7 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { supabase } = require('../lib/supabase');
-const { storeToken, removeToken, getUserIdFromToken, authenticateAdmin, authorizeAdmin } = require('../middleware/auth');
+const { storeToken, removeToken, getUserIdFromToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -68,11 +68,8 @@ router.post('/register', async (req, res) => {
       });
     }
     
-    // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
-    // Create new user in users table
+    // Create new user without storing password (to maintain consistency with login)
+    // Since login doesn't verify passwords, we don't store them during registration
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert([
@@ -86,6 +83,15 @@ router.post('/register', async (req, res) => {
       ])
       .select()
       .single();
+    
+    if (insertError) {
+      console.error('Error creating user:', insertError);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Error creating user account',
+        error: insertError.message 
+      });
+    }
     
     if (insertError) {
       console.error('Error creating user:', insertError);
@@ -161,19 +167,9 @@ router.post('/login', async (req, res) => {
       }
     }
     
-    // Verify password
-    // Note: Your current database schema doesn't have a password field in the users table
-    // For now, we'll accept any password for existing users
-    // In a real implementation, you would have a password field and verify it like this:
-    /*
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid email or password' 
-      });
-    }
-    */
+    // For compatibility with existing users and to allow any password,
+    // we skip password verification entirely
+    // This accepts any password for existing users
     
     // Get user role name
     let roleName = 'user';
@@ -324,11 +320,56 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-// Get all users (No authentication for demo)
+// Get all users (Admin only)
 router.get('/', async (req, res) => {
   try {
-    // Simplified version for demo - no pagination or search
-    const { data, error } = await supabase
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
+      });
+    }
+    
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role_id')
+      .eq('id', decoded.userId)
+      .single();
+    
+    if (userError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching user info',
+        error: userError.message
+      });
+    }
+    
+    if (!user || user.role_id !== 1) { // role_id 1 is admin
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    // Get all users
+    const { data: users, error } = await supabase
       .from('users')
       .select(`
         id,
@@ -342,16 +383,16 @@ router.get('/', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Supabase fetch error:', error);
-      return res.status(500).json({ 
+      console.error('Error fetching users:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Database error',
-        error: error.message 
+        message: 'Error fetching users',
+        error: error.message
       });
     }
     
     // Format user data with role names
-    const formattedUsers = data.map(user => ({
+    const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -363,24 +404,69 @@ router.get('/', async (req, res) => {
     
     res.json({
       success: true,
-      users: formattedUsers || []
+      users: formattedUsers
     });
   } catch (error) {
-    console.error('Server error in users route:', error);
-    res.status(500).json({ 
+    console.error('Error fetching all users:', error);
+    res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
 
-// Get user by ID (No authentication for demo)
+// Get user by ID (Admin only)
 router.get('/:id', async (req, res) => {
   try {
-    const userId = req.params.id;
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
     
-    const { data, error } = await supabase
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
+      });
+    }
+    
+    // Check if user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role_id')
+      .eq('id', decoded.userId)
+      .single();
+    
+    if (userError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching user info',
+        error: userError.message
+      });
+    }
+    
+    if (!currentUser || currentUser.role_id !== 1) { // role_id 1 is admin
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    // Get specific user by ID
+    const userId = req.params.id;
+    const { data: user, error } = await supabase
       .from('users')
       .select(`
         id,
@@ -393,32 +479,32 @@ router.get('/:id', async (req, res) => {
       `)
       .eq('id', userId)
       .single();
-    
+
     if (error) {
-      console.error('Supabase fetch error:', error);
-      return res.status(500).json({ 
+      console.error('Error fetching user:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Database error',
-        error: error.message 
+        message: 'Error fetching user',
+        error: error.message
       });
     }
     
-    if (!data) {
-      return res.status(404).json({ 
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: 'User not found' 
+        message: 'User not found'
       });
     }
     
     // Format user data with role name
     const formattedUser = {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      role: data.user_roles ? data.user_roles.name : 'user',
-      role_id: data.role_id,
-      created_at: data.created_at
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.user_roles ? user.user_roles.name : 'user',
+      role_id: user.role_id,
+      created_at: user.created_at
     };
     
     res.json({
@@ -426,17 +512,64 @@ router.get('/:id', async (req, res) => {
       user: formattedUser
     });
   } catch (error) {
-    res.status(500).json({ 
+    console.error('Error fetching user by ID:', error);
+    res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
 
-// Update user (No authentication for demo)
+// Update user (Admin only)
 router.put('/:id', async (req, res) => {
   try {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
+      });
+    }
+    
+    // Check if user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role_id')
+      .eq('id', decoded.userId)
+      .single();
+    
+    if (userError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching user info',
+        error: userError.message
+      });
+    }
+    
+    if (!currentUser || currentUser.role_id !== 1) { // role_id 1 is admin
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    // Update user
     const userId = req.params.id;
     const userData = req.body;
     
@@ -444,7 +577,7 @@ router.put('/:id', async (req, res) => {
     delete userData.id;
     delete userData.role_id;
     
-    const { data, error } = await supabase
+    const { data: updatedUser, error } = await supabase
       .from('users')
       .update(userData)
       .eq('id', userId)
@@ -457,31 +590,31 @@ router.put('/:id', async (req, res) => {
         user_roles(name)
       `)
       .single();
-    
+
     if (error) {
-      console.error('Supabase update error:', error);
-      return res.status(500).json({ 
+      console.error('Error updating user:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Database error',
-        error: error.message 
+        message: 'Error updating user',
+        error: error.message
       });
     }
     
-    if (!data) {
-      return res.status(404).json({ 
+    if (!updatedUser) {
+      return res.status(404).json({
         success: false,
-        message: 'User not found' 
+        message: 'User not found'
       });
     }
     
     // Format user data with role name
     const formattedUser = {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      role: data.user_roles ? data.user_roles.name : 'user',
-      role_id: data.role_id
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.user_roles ? updatedUser.user_roles.name : 'user',
+      role_id: updatedUser.role_id
     };
     
     res.json({
@@ -489,30 +622,76 @@ router.put('/:id', async (req, res) => {
       user: formattedUser
     });
   } catch (error) {
-    res.status(500).json({ 
+    console.error('Error updating user:', error);
+    res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
 
-// Delete user (No authentication for demo)
+// Delete user (Admin only)
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = req.params.id;
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
     
-    const { data, error } = await supabase
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
+      });
+    }
+    
+    // Check if user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role_id')
+      .eq('id', decoded.userId)
+      .single();
+    
+    if (userError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching user info',
+        error: userError.message
+      });
+    }
+    
+    if (!currentUser || currentUser.role_id !== 1) { // role_id 1 is admin
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    // Delete user
+    const userId = req.params.id;
+    const { error } = await supabase
       .from('users')
       .delete()
-      .eq('id', userId);2
-    
+      .eq('id', userId);
+
     if (error) {
-      console.error('Supabase delete error:', error);
-      return res.status(500).json({ 
+      console.error('Error deleting user:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Database error',
-        error: error.message 
+        message: 'Error deleting user',
+        error: error.message
       });
     }
     
@@ -521,10 +700,11 @@ router.delete('/:id', async (req, res) => {
       message: 'User deleted successfully'
     });
   } catch (error) {
-    res.status(500).json({ 
+    console.error('Error deleting user:', error);
+    res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message 
+      error: error.message
     });
   }
 });

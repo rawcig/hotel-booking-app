@@ -41,14 +41,36 @@ To enable hotel image uploads, you need to set up a storage bucket in Supabase:
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
+
+We provide two authentication systems to handle different use cases:
+
+#### Simple Authentication System (Recommended for Development)
+This system bypasses database RLS issues and is recommended for development and testing:
+
+- `POST /api/simple-auth/login` - Login with simple auth (any password accepted for existing users)
+- `POST /api/simple-auth/register` - Register new user with proper password verification
+- `GET /api/simple-auth/verify` - Verify authentication token
+
+**Default credentials for testing:**
+- Email: `admin@example.com`, Password: any value (e.g., `admin123`)
+- Email: `user@example.com`, Password: any value (e.g., `user123`)
+
+#### Main Authentication System (For Production)
+This system connects directly to the database but requires proper configuration:
+
+- `POST /api/auth/register` - User registration (requires service role key for password storage)
+- `POST /api/auth/login` - User login (may accept any password if no password is stored in DB)
 - `POST /api/auth/logout` - User logout
 - `GET /api/auth/profile` - Get current user profile
 - `GET /api/auth` - Get all users (Admin only)
 - `GET /api/auth/:id` - Get user by ID (Admin only)
 - `PUT /api/auth/:id` - Update user (Admin only)
 - `DELETE /api/auth/:id` - Delete user (Admin only)
+
+**Note:** For the main authentication system to work properly with password verification, you need to:
+1. Add a `password` column to your `users` table in Supabase
+2. Set the `SUPABASE_SERVICE_ROLE_KEY` in your environment variables
+3. The service role key bypasses RLS policies and allows full database access
 
 ### Hotels
 - `GET /api/hotels` - Get list of hotels

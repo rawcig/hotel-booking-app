@@ -17,7 +17,7 @@ export default function Profile() {
     name: user?.name || 'Guest',
     email: user?.email || 'guest@account.com',
     phone: user?.phone || '+855 12 345 678',
-    avatar: images.userFoto,
+    avatar: images.avatar1,
     memberSince: '2023',
     totalBookings: '0',
     favoriteHotels: '0',
@@ -49,9 +49,6 @@ export default function Profile() {
 
   // Available avatars for guests
   const guestAvatars = [
-    images.userMale,
-    images.userFemale,
-    images.userFoto,
     images.avatar1,
     images.avatar2,
     images.avatar3,

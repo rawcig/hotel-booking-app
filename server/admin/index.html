@@ -18,7 +18,7 @@
         <h2 class="text-3xl font-bold text-gray-800 mb-2">Login to Account</h2>
         <p class="auth-subtitle text-gray-500 mb-8">Please enter your email and password to continue</p>
 
-        <form id="loginForm" class="auth-form">
+        <form id="loginForm" class="auth-form ">
           <div class="form-group mb-6">
             <label for="loginEmail" class="block text-gray-700 font-medium mb-2">Email address:</label>
             <input type="email" id="loginEmail"
@@ -56,41 +56,51 @@
   </div>
 
   <!-- Register Page -->
-  <div id="registerPage" class="auth-page" style="display: none;">
-    <div class="auth-container">
-      <div class="auth-card">
-        <h2>Create an Account</h2>
-        <p class="auth-subtitle">Create a account to continue</p>
+  <div id="registerPage"
+    class="auth-page flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600"
+    style="display: none;">
+    <div class="auth-container w-full max-w-md">
+      <div class="auth-card bg-white rounded-2xl p-10 shadow-2xl">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Create an Account</h2>
+        <p class="auth-subtitle text-gray-500 mb-8">Create a account to continue</p>
 
         <form id="registerForm" class="auth-form">
-          <div class="form-group">
-            <label for="registerEmail">Email address:</label>
-            <input type="email" id="registerEmail" placeholder="esteban_schiller@gmail.com" required>
+          <div class="form-group mb-6">
+            <label for="registerEmail" class="block text-gray-700 font-medium mb-2">Email address:</label>
+            <input type="email" id="registerEmail"
+              class="w-full px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="esteban_schiller@gmail.com" required>
           </div>
 
-          <div class="form-group">
-            <label for="registerUsername">Username</label>
-            <input type="text" id="registerUsername" placeholder="Username" required>
+          <div class="form-group mb-6">
+            <label for="registerUsername" class="block text-gray-700 font-medium mb-2">Username</label>
+            <input type="text" id="registerUsername"
+              class="w-full px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Username" required>
           </div>
 
-          <div class="form-group">
-            <div class="form-row">
-              <label for="registerPassword">Password</label>
-              <a href="#" class="forgot-link">Forget Password?</a>
+          <div class="form-group mb-6">
+            <div class="form-row flex justify-between items-center mb-2">
+              <label for="registerPassword" class="block text-gray-700 font-medium">Password</label>
+              <a href="#" class="forgot-link text-blue-500 text-sm hover:text-blue-700">Forget Password?</a>
             </div>
-            <input type="password" id="registerPassword" placeholder="••••••" required>
+            <input type="password" id="registerPassword"
+              class="w-full px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••" required>
           </div>
 
-          <div class="form-group checkbox-group">
-            <input type="checkbox" id="acceptTerms" required>
-            <label for="acceptTerms">I accept terms and conditions</label>
+          <div class="form-group checkbox-group flex items-center gap-3 mb-6">
+            <input type="checkbox" id="acceptTerms" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+            <label for="acceptTerms" class="text-gray-700">I accept terms and conditions</label>
           </div>
 
-          <button type="submit" class="auth-btn">Sign Up</button>
+          <button type="submit"
+            class="auth-btn w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300">Sign
+            Up</button>
 
-          <p class="auth-link">
+          <p class="auth-link text-center mt-6 text-gray-500 text-sm">
             Already have an account?
-            <a href="#" onclick="showLogin()">Login</a>
+            <a href="#" class="text-blue-500 font-medium hover:text-blue-700" onclick="showLogin()">Login</a>
           </p>
         </form>
       </div>
@@ -115,12 +125,7 @@
         <div
           class="nav-item px-5 py-3 rounded-lg cursor-pointer transition-all duration-300 hover:bg-gray-700 font-medium"
           data-page="bookings">Bookings</div>
-        <div
-          class="nav-item px-5 py-3 rounded-lg cursor-pointer transition-all duration-300 hover:bg-gray-700 font-medium"
-          data-page="reports">Reports</div>
-        <div
-          class="nav-item px-5 py-3 rounded-lg cursor-pointer transition-all duration-300 hover:bg-gray-700 font-medium"
-          data-page="financials">Financials</div>
+
       </nav>
       <div
         class="logout-btn absolute bottom-5 left-5 right-5 px-5 py-3 bg-gray-700 rounded-lg text-center cursor-pointer transition-all duration-300 hover:bg-gray-600">
@@ -205,11 +210,6 @@
         <div class="content-section bg-white rounded-2xl p-6 shadow-md ">
           <div class="section-header flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Recent Bookings</h2>
-            <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm">
-                <!-- Options will be populated by JavaScript -->
-              </select>
-            </div>
           </div>
           <div class="table-container overflow-x-auto">
             <table class="data-table w-full border-collapse">
@@ -236,9 +236,16 @@
       <div id="hotelsContent" class="page-content p-8 flex-1 overflow-y-auto" style="display: none;">
         <div class="page-header flex justify-between items-center mb-8">
           <h1 class="page-title text-3xl font-bold text-gray-800">Hotel Management</h1>
-          <button
-            class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-700"
-            onclick="openAddHotelModal()">Add New Hotel</button>
+          <div class="flex items-center gap-4">
+            <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
+              <span class="search-icon mr-2 text-gray-500">🔍</span>
+              <input type="text" placeholder="Search hotels..." id="hotelTableSearch"
+                class="bg-transparent outline-none w-full text-sm" oninput="handleHotelTableSearch(this.value)">
+            </div>
+            <button
+              class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-700"
+              onclick="openAddHotelModal()">Add New Hotel</button>
+          </div>
         </div>
 
         <div class="content-section bg-white rounded-2xl p-6 shadow-md">
@@ -279,13 +286,35 @@
       <div id="roomsContent" class="page-content p-8 flex-1 overflow-y-auto" style="display: none;">
         <div class="page-header flex justify-between items-center mb-8">
           <h1 class="page-title text-3xl font-bold text-gray-800">Hotel Management</h1>
-          <button
-            class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-700"
-            onclick="openAddHotelModal()">Add New Hotel</button>
+          <div class="flex items-center gap-4">
+            <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
+              <span class="search-icon mr-2 text-gray-500">🔍</span>
+              <input type="text" placeholder="Search hotels..." id="hotelCardSearch"
+                class="bg-transparent outline-none w-full text-sm" oninput="handleHotelCardSearch(this.value)">
+            </div>
+            <button
+              class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-700"
+              onclick="openAddHotelModal()">Add New Hotel</button>
+          </div>
         </div>
         <div class="content-section bg-white rounded-2xl p-6 shadow-md">
           <div class="rooms-grid" id="roomsGrid">
             <!-- Room cards will be populated by JavaScript -->
+          </div>
+          <div id="cardViewPagination"
+            class="table-footer flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+            <span class="text-gray-600">Showing <span id="cardViewCurrentStart">1</span>-<span
+                id="cardViewCurrentEnd">12</span> of <span id="cardViewTotalCount">0</span></span>
+            <div class="pagination flex items-center gap-2">
+              <button
+                class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                id="prevCardViewPage" onclick="loadCardViewPage(currentCardViewPage - 1)" disabled>⟨</button>
+              <span id="cardViewPageInfo" class="text-gray-600">Page <span id="currentCardViewPage">1</span> of <span
+                  id="totalCardViewPages">1</span></span>
+              <button
+                class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                id="nextCardViewPage" onclick="loadCardViewPage(currentCardViewPage + 1)" disabled>⟩</button>
+            </div>
           </div>
         </div>
       </div>
@@ -473,246 +502,7 @@
         </div>
       </div>
 
-      <!-- Reports Content -->
-      <div id="reportsContent" class="page-content p-8 flex-1 overflow-y-auto" style="display: none;">
-        <h1 class="page-title text-3xl font-bold text-gray-800 mb-6">Reports & Analytics</h1>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon customers w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-blue-500 to-purple-600">
-              👥</div>
-            <div class="stat-info">
-              <h3 id="totalCustomers" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Total Customers</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon bookings w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-pink-400 to-red-500">
-              📦</div>
-            <div class="stat-info">
-              <h3 id="totalBookings" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Total Bookings</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon payments w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-green-400 to-teal-500">
-              💰</div>
-            <div class="stat-info">
-              <h3 id="totalRevenue" class="text-2xl font-bold">$0</h3>
-              <p class="text-gray-500 text-sm">Total Revenue</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon rooms w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-yellow-400 to-orange-500">
-              🏠</div>
-            <div class="stat-info">
-              <h3 id="totalHotels" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Total Hotels</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="content-section  bg-white rounded-2xl p-6 shadow-md mb-8 ">
-          <div class="section-header flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Revenue Overview</h2>
-            <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="revenueMonth">
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="revenueYear">
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025" selected>2025</option>
-              </select>
-            </div>
-          </div>
-          <div class="chart-container ">
-            <canvas id="revenueChart"></canvas>
-          </div>
-        </div>
-
-        <div class="content-section bg-white rounded-2xl p-6 shadow-md">
-          <div class="section-header flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Booking Trends</h2>
-            <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="bookingMonth">
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="bookingYear">
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025" selected>2025</option>
-              </select>
-            </div>
-          </div>
-          <div class="chart-container ">
-            <canvas id="bookingChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Financial Management Content -->
-      <div id="financialsContent" class="page-content p-8 flex-1 overflow-y-auto" style="display: none;">
-        <h1 class="page-title text-3xl font-bold text-gray-800 mb-6">Financial Management</h1>
-
-        <!-- Financial Stats Grid -->
-        <div class="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon payments w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-green-400 to-teal-500">
-              💰</div>
-            <div class="stat-info">
-              <h3 id="monthlyRevenue" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Monthly Revenue</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon bookings w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-pink-400 to-red-500">
-              📦</div>
-            <div class="stat-info">
-              <h3 id="pendingPayments" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Pending Payments</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon customers w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-blue-500 to-purple-600">
-              👥</div>
-            <div class="stat-info">
-              <h3 id="refundedAmount" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Refunded</p>
-            </div>
-          </div>
-          <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
-            <div
-              class="stat-icon rooms w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-yellow-400 to-orange-500">
-              🏠</div>
-            <div class="stat-info">
-              <h3 id="commissionEarned" class="text-2xl font-bold">0</h3>
-              <p class="text-gray-500 text-sm">Commission</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="content-section bg-white rounded-2xl p-6 shadow-md mb-8">
-          <div class="section-header flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Revenue Overview</h2>
-            <div class="flex gap-2">
-              <select class="month-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="financialMonth">
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
-              </select>
-              <select class="year-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                id="financialYear">
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025" selected>2025</option>
-              </select>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="financialRevenueChart"></canvas>
-          </div>
-        </div>
-
-        <div class="content-section bg-white rounded-2xl p-6 shadow-md mb-8">
-          <div class="section-header flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Payment Methods</h2>
-          </div>
-          <div class="chart-container">
-            <canvas id="paymentMethodsChart"></canvas>
-          </div>
-        </div>
-
-        <div class="content-section bg-white rounded-2xl p-6 shadow-md">
-          <div class="section-header flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Transactions</h2>
-            <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
-              <span class="search-icon mr-2 text-gray-500">🔍</span>
-              <input type="text" placeholder="Search transactions..." id="transactionSearch"
-                class="bg-transparent outline-none w-full text-sm">
-            </div>
-          </div>
-          <div class="table-container overflow-x-auto">
-            <table class="data-table w-full border-collapse">
-              <thead>
-                <tr class="bg-gray-50">
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">ID</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Date</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Description</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Type</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Amount</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Status</th>
-                  <th class="text-left p-4 font-semibold text-gray-700 border-b">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="transactionsTableBody">
-                <!-- Content populated by JavaScript -->
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
-            <span class="text-gray-600">Showing 1-10 of <span id="transactionsTotalCount">0</span></span>
-            <div class="pagination flex items-center gap-2">
-              <button
-                class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadTransactionsPage(currentTransactionsPage - 1)" id="prevTransactionsPage"
-                disabled>⟨</button>
-              <span id="transactionsPageInfo" class="text-gray-600">Page <span id="currentTransactionsPage">1</span> of
-                <span id="totalTransactionsPages">1</span></span>
-              <button
-                class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadTransactionsPage(currentTransactionsPage + 1)" id="nextTransactionsPage"
-                disabled>⟩</button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1172,7 +962,7 @@
       </div>
       <div class="modal-body p-6 overflow-y-auto flex-1">
         <form id="editHotelForm">
-          <input type="hidden" id="editHotelId">
+          <input type="hidden" id="editHotelId" name="editHotelId">
           <div class="form-group mb-5">
             <label for="editHotelName" class="block text-gray-700 font-medium mb-2">Hotel Name:</label>
             <input type="text" id="editHotelName"
@@ -1236,96 +1026,6 @@
   </div>
 
   <script src="JS/script.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    // Initialize charts after DOM loads
-    document.addEventListener('DOMContentLoaded', function () {
-      // Set up event listeners for report selectors
-      const revenueMonthSelector = document.getElementById('revenueMonth');
-      const revenueYearSelector = document.getElementById('revenueYear');
-      const bookingMonthSelector = document.getElementById('bookingMonth');
-      const bookingYearSelector = document.getElementById('bookingYear');
-
-      // Set default values for selectors
-      if (revenueMonthSelector) {
-        revenueMonthSelector.value = new Date().getMonth() + 1;
-      }
-      if (revenueYearSelector) {
-        revenueYearSelector.value = new Date().getFullYear();
-      }
-      if (bookingMonthSelector) {
-        bookingMonthSelector.value = new Date().getMonth() + 1;
-      }
-      if (bookingYearSelector) {
-        bookingYearSelector.value = new Date().getFullYear();
-      }
-
-      // Initialize charts
-      initializeCharts();
-    });
-
-    function initializeCharts() {
-      // Revenue chart
-      const revenueCtx = document.getElementById('revenueChart');
-      if (revenueCtx) {
-        new Chart(revenueCtx, {
-          type: 'line',
-          data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [{
-              label: 'Revenue',
-              data: [12000, 19000, 15000, 18000, 22000, 19000, 25000, 23000, 21000, 19000, 17000, 22000],
-              borderColor: 'rgb(75, 192, 192)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              tension: 0.1
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-              },
-              title: {
-                display: true,
-                text: 'Monthly Revenue'
-              }
-            }
-          }
-        });
-      }
-
-      // Booking chart
-      const bookingCtx = document.getElementById('bookingChart');
-      if (bookingCtx) {
-        new Chart(bookingCtx, {
-          type: 'bar',
-          data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [{
-              label: 'Bookings',
-              data: [12, 19, 15, 18, 22, 19, 25, 23, 21, 19, 17, 22],
-              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-              borderColor: 'rgba(54, 162, 235, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-              },
-              title: {
-                display: true,
-                text: 'Monthly Bookings'
-              }
-            }
-          }
-        });
-      }
-    }
-  </script>
 </body>
 
 </html>

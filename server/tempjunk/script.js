@@ -1,6 +1,6 @@
 // Application Data
 let appData = {
-    hotelsForCards: [],
+    rooms: [],
     availableRooms: [],
     bookings: []
 };
@@ -8,42 +8,7 @@ let appData = {
 // Application State
 let currentPage = 'login';
 let currentUser = null;
-
-// State persistence functions
-function saveAppState() {
-    const state = {
-        currentPage: currentPage,
-        currentUser: currentUser
-    };
-    try {
-        localStorage.setItem('adminAppState', JSON.stringify(state));
-    } catch (error) {
-        console.error('Error saving app state:', error);
-    }
-}
-
-function loadAppState() {
-    try {
-        const state = localStorage.getItem('adminAppState');
-        if (state) {
-            const parsedState = JSON.parse(state);
-            if (parsedState.currentPage) currentPage = parsedState.currentPage;
-            if (parsedState.currentUser) currentUser = parsedState.currentUser;
-        }
-    } catch (error) {
-        console.error('Error loading app state:', error);
-    }
-}
-
-function clearAppState() {
-    try {
-        localStorage.removeItem('adminAppState');
-    } catch (error) {
-        console.error('Error clearing app state:', error);
-    }
-}
-
-
+let searchFilters = {};
 
 // DOM Elements
 const loginPage = document.getElementById('loginPage');
@@ -61,51 +26,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Application Initialization
-async function initializeApp() {
+function initializeApp() {
     setupEventListeners();
     setupImageUploadListeners();
-    
-    // Load previously saved state
-    loadAppState();
+    showPage('login');
     
     // Check if user is already logged in (in a real app, check localStorage/sessionStorage)
     const savedUser = getStoredUser();
-    if (savedUser && savedUser.token) {
-        // Verify that the token is still valid by making a test API call
+    if (savedUser) {
         currentUser = savedUser;
-        try {
-            // Test if the user token is still valid by making a simple API call
-            const response = await fetch(`${API_BASE_URL}/users?page=1&limit=1`, {
-                headers: {
-                    'Authorization': `Bearer ${currentUser.token}`
-                }
-            });
-            
-            if (response.ok) {
-                // If token is valid, restore the page state
-                if (currentPage && currentPage !== 'login' && currentPage !== 'register') {
-                    showPage(currentPage);
-                } else {
-                    showDashboard();
-                }
-                // Update user profile in header
-                updateUserProfileInHeader();
-            } else {
-                // If token is invalid, clear stored user and redirect to login
-                clearStoredUser();
-                clearAppState();
-                showPage('login');
-            }
-        } catch (error) {
-            console.error('Error validating user token:', error);
-            // If there's an error validating the token, clear stored user and redirect to login
-            clearStoredUser();
-            clearAppState();
-            showPage('login');
-        }
-    } else {
-        // If user is not logged in, always start at login page
-        showPage('login');
+        showDashboard();
+        // Update user profile in header
+        updateUserProfileInHeader();
     }
 }
 
@@ -154,7 +86,67 @@ function setupEventListeners() {
     document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
     document.getElementById('roomSearch')?.addEventListener('input', handleRoomSearch);
     
-    
+    // Edit room form
+    document.getElementById('editHotelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validate form before submission
+        if (!validateEditHotelForm()) {
+            return;
+        }
+        
+        const hotelId = document.getElementById('editHotelId').value;
+        const hotelData = {
+            name: document.getElementById('editHotelName').value,
+            location: document.getElementById('editHotelLocation').value,
+            distance: document.getElementById('editHotelDistance').value,
+            rating: document.getElementById('editHotelRating').value,
+            price: document.getElementById('editHotelPrice').value,
+            image: document.getElementById('editHotelImage').value,
+            description: document.getElementById('editHotelDescription').value,
+            amenities: document.getElementById('editHotelAmenities').value.split(',').map(item => item.trim()).filter(item => item)
+        };
+        
+        // Add loading state to submit button
+        const submitButton = document.querySelector('#editHotelForm .auth-btn');
+        if (submitButton && !submitButton.classList.contains('loading')) {
+            // Store original content
+            if (!submitButton.dataset.originalContent) {
+                submitButton.dataset.originalContent = submitButton.innerHTML;
+            }
+            
+            // Add loading class
+            submitButton.classList.add('loading');
+            
+            // Add visual indicator
+            const spinner = document.createElement('div');
+            spinner.className = 'button-spinner';
+            spinner.innerHTML = 'Saving...';
+            submitButton.innerHTML = '';
+            submitButton.appendChild(spinner);
+            submitButton.disabled = true;
+        }
+        
+        try {
+            const result = await updateHotel(hotelId, hotelData);
+            if (result) {
+                closeEditHotelModal();
+                showNotification('Hotel updated successfully', 'success');
+            }
+        } catch (error) {
+            console.error('Error updating hotel:', error);
+            showNotification('Error updating hotel', 'error');
+        } finally {
+            // Restore submit button state
+            const submitButton = document.querySelector('#editHotelForm .auth-btn');
+            if (submitButton && submitButton.classList.contains('loading')) {
+                submitButton.classList.remove('loading');
+                submitButton.innerHTML = submitButton.dataset.originalContent || 'Update Hotel';
+                delete submitButton.dataset.originalContent;
+                submitButton.disabled = false;
+            }
+        }
+    });
     
     // Window resize handler
     window.addEventListener('resize', handleResize);
@@ -205,7 +197,6 @@ async function handleLogin(e) {
             
             // Update user profile in header
             updateUserProfileInHeader();
-            saveAppState(); // Save state after login
         } else {
             showNotification(result.message || 'Login failed', 'error');
         }
@@ -258,7 +249,6 @@ async function handleRegister(e) {
             
             // Update user profile in header
             updateUserProfileInHeader();
-            saveAppState(); // Save state after registration
         } else {
             showNotification(result.message || 'Registration failed', 'error');
         }
@@ -284,7 +274,6 @@ async function handleLogout() {
         
         currentUser = null;
         clearStoredUser();
-        clearAppState(); // Clear saved state on logout
         showNotification('Logged out successfully', 'info');
         showPage('login');
     }
@@ -329,7 +318,6 @@ function showDashboard() {
     updateUserProfileInHeader();
     
     loadDashboardData();
-    saveAppState(); // Save the current page state
 }
 
 // Update user profile information in the header
@@ -380,7 +368,6 @@ function showPage(page) {
     }
     
     currentPage = page;
-    saveAppState(); // Save the current page state
 }
 
 // Navigation Handler
@@ -411,8 +398,8 @@ function handleNavigation(e) {
             case 'dashboard':
                 loadDashboardData();
                 break;
-            case 'rooms':  // This displays hotels as cards
-                loadHotelsAsCards();
+            case 'rooms':  // This is now Hotel Management
+                loadRoomsData();
                 break;
             case 'roomAvailable':
                 loadAvailableRoomsData();
@@ -426,15 +413,16 @@ function handleNavigation(e) {
             case 'bookings':
                 loadBookingsData();
                 break;
-            
+            case 'reports':
+                loadReportsData();
+                break;
+            case 'financials':
+                loadFinancialsData();
+                break;
             default:
                 break;
         }
     }
-    
-    // Save the current section/page in the state
-    currentPage = page;
-    saveAppState();
 }
 
 // Data Loading Functions
@@ -497,23 +485,16 @@ async function loadDashboardData() {
     }
 }
 
-// Global variables for card view pagination
-let cardViewSearchTerm = '';
-let currentCardViewPage = 1;
-let totalCardViewPages = 1;
-const hotelsPerPage = 12; // Number of hotels to show per page in card view
-
-async function loadHotelsAsCards() {
+async function loadRoomsData() {
     try {
         // Show loading state
         const roomsGrid = document.getElementById('roomsGrid');
         if (roomsGrid) {
-            roomsGrid.innerHTML = '<div class="loading w-full flex justify-center items-center"><div class="justify-center items-center"><div class="spinner"></div><div class="ml-2">Loading hotels...</div></div></div>';
+            roomsGrid.innerHTML = '<div class="loading w-full flex justify-center items-center"><div class="spinner"></div><div class="ml-2">Loading hotels...</div></div>';
         }
         
-        // Fetch hotels data with pagination
-        const searchParam = cardViewSearchTerm ? `&search=${encodeURIComponent(cardViewSearchTerm)}` : '';
-        const response = await fetch(`${API_BASE_URL}/hotels?page=${currentCardViewPage}&limit=${hotelsPerPage}${searchParam}`, {
+        // Fetch hotels data
+        const response = await fetch(`${API_BASE_URL}/hotels?limit=1000`, {
             headers: {
                 'Authorization': `Bearer ${currentUser?.token}`
             }
@@ -521,8 +502,8 @@ async function loadHotelsAsCards() {
         const result = await response.json();
         
         if (result.success) {
-            // Transform hotel data for card display - use only the main image
-            appData.hotelsForCards = result.hotels.map((hotel, index) => ({
+            // Transform hotel data to match room structure
+            appData.rooms = result.hotels.map((hotel, index) => ({
                 id: hotel.id || index,
                 hname: hotel.name,
                 number: `${hotel.id || index}`,
@@ -533,23 +514,10 @@ async function loadHotelsAsCards() {
                 status: 'Available',
                 rating: parseFloat(hotel.rating),
                 reviews: hotel.reviews ? hotel.reviews.length : 0,
-                images: [hotel.image || ''], // Use only the main image
-                // Store original hotel reference for search
-                originalHotel: hotel
+                images: hotel.gallery || [hotel.image]
             }));
             
-            // Update pagination info
-            if (result.pagination) {
-                totalCardViewPages = Math.ceil(result.pagination.totalCount / hotelsPerPage);
-                currentCardViewPage = result.pagination.currentPage || 1;
-            } else {
-                // Fallback if server doesn't return pagination
-                totalCardViewPages = 1;
-            }
-            
-            // Render hotels and pagination controls
-            renderHotelsAsCards();
-            renderCardViewPagination();
+            renderRoomsContent();
         } else {
             showNotification('Failed to load hotels data', 'error');
         }
@@ -557,47 +525,6 @@ async function loadHotelsAsCards() {
         console.error('Error loading hotels data:', error);
         showNotification('Error loading hotels data', 'error');
     }
-}
-
-
-
-// Render pagination controls for card view
-function renderCardViewPagination() {
-    // Update pagination elements
-    const currentStart = (currentCardViewPage - 1) * hotelsPerPage + 1;
-    const currentEnd = currentCardViewPage === totalCardViewPages 
-        ? currentStart + appData.hotelsForCards.length - 1 
-        : Math.min(currentCardViewPage * hotelsPerPage, totalCardViewPages * hotelsPerPage);
-    
-    const totalCount = totalCardViewPages * hotelsPerPage;
-    
-    document.getElementById('cardViewCurrentStart').textContent = currentStart;
-    document.getElementById('cardViewCurrentEnd').textContent = currentEnd;
-    document.getElementById('cardViewTotalCount').textContent = totalCount;
-    document.getElementById('currentCardViewPage').textContent = currentCardViewPage;
-    document.getElementById('totalCardViewPages').textContent = totalCardViewPages;
-    
-    // Update button states
-    const prevBtn = document.getElementById('prevCardViewPage');
-    const nextBtn = document.getElementById('nextCardViewPage');
-    
-    if (prevBtn) prevBtn.disabled = currentCardViewPage <= 1;
-    if (nextBtn) nextBtn.disabled = currentCardViewPage >= totalCardViewPages;
-}
-
-// Load a specific page of hotels in card view
-function loadCardViewPage(page) {
-    if (page < 1 || page > totalCardViewPages) return;
-    
-    currentCardViewPage = page;
-    loadHotelsAsCards();
-}
-
-// Search handler for card view - resets to page 1 when searching
-function handleHotelCardSearch(searchTerm) {
-    cardViewSearchTerm = searchTerm;
-    currentCardViewPage = 1; // Reset to first page when searching
-    loadHotelsAsCards();
 }
 
 async function loadBookingListData() {
@@ -641,7 +568,7 @@ async function loadAvailableRoomsData() {
         // Show loading state
         const tableBody = document.getElementById('availableRoomsTableBody');
         if (tableBody) {
-            tableBody.innerHTML = '<tr><div class="justify-center items-center"><td colspan="6" class="loading"><div class="spinner"></div>Loading available rooms...</td></div></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div>Loading available rooms...</td></tr>';
         }
         
         // Fetch hotels data
@@ -700,20 +627,20 @@ function renderDashboardContent() {
     });
 }
 
-function renderHotelsAsCards() {
+function renderRoomsContent() {
     const roomsGrid = document.getElementById('roomsGrid');
     if (!roomsGrid) return;
     
-    if (appData.hotelsForCards.length === 0) {
+    if (appData.rooms.length === 0) {
         roomsGrid.innerHTML = '<p>No hotels found</p>';
         return;
     }
     
     roomsGrid.innerHTML = '';
     
-    appData.hotelsForCards.forEach(hotel => {
-        const hotelCard = createHotelCard(hotel);
-        roomsGrid.appendChild(hotelCard);
+    appData.rooms.forEach(room => {
+        const roomCard = createRoomCard(room);
+        roomsGrid.appendChild(roomCard);
     });
 }
 
@@ -773,7 +700,7 @@ function renderAvailableRoomsContent() {
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit">✏️</button>
-                    <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete">🗑️</button>
+                    <button class="action-btn delete" onclick="deleteRoom(${room.id})" title="Delete">🗑️</button>
                 </div>
             </td>
         `;
@@ -781,34 +708,44 @@ function renderAvailableRoomsContent() {
     });
 }
 
+// Helper Functions
+function createTableRow(cells) {
+    const row = document.createElement('tr');
+    cells.forEach(cellContent => {
+        const cell = document.createElement('td');
+        cell.className = 'text-left p-4 border-b';
+        cell.innerHTML = cellContent;
+        row.appendChild(cell);
+    });
+    return row;
+}
 
-
-function createHotelCard(hotel) {
+function createRoomCard(room) {
     const card = document.createElement('div');
     card.className = 'room-card bg-white rounded-2xl overflow-hidden shadow-md';
     
-    const stars = '★'.repeat(Math.floor(hotel.rating)) + '☆'.repeat(5 - Math.floor(hotel.rating));
+    const stars = '★'.repeat(Math.floor(room.rating)) + '☆'.repeat(5 - Math.floor(room.rating));
     
     // Use the full hotel name
-    const hotelName = hotel.hname || `Hotel ${hotel.id}`;
+    const hotelName = room.hname || `Hotel ${room.id}`;
     
     card.innerHTML = `
-        <div class="room-image hotel-card-image-${hotel.id}" style="background-image: url('${hotel.images[0]}')">
+        <div class="room-image" style="background-image: url('${room.images[0]}')">
+            <button class="room-carousel prev" onclick="previousImage(${room.id})">‹</button>
+            <button class="room-carousel next" onclick="nextImage(${room.id})">›</button>
         </div>
         <div class="room-info p-6">
             <div class="room-header">
-                <div class="room-number font-bold text-lg">ID: ${hotel.id} - ${hotelName}</div>
-                <div class="room-price font-bold text-blue-600">${hotel.price.toFixed(2)}/night</div>
+                <div class="room-number font-bold text-lg">ID: ${room.id} - ${hotelName}</div>
+                <div class="room-price font-bold text-blue-600">${room.price.toFixed(2)}/night</div>
             </div>
             <div class="room-rating">
                 <span class="stars text-amber-500">${stars}</span>
-                <span class="rating-count text-gray-500">(${hotel.reviews} reviews)</span>
+                <span class="rating-count text-gray-500">(${room.reviews} reviews)</span>
             </div>
-            <div class="room-actions mt-4 flex gap-2 justify-center">
-                <div id="modify-btn" class="flex gap-1">
-                  <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-300 text-sm min-w-[60px]" onclick="editHotel(${hotel.id})">Edit</button>
-                  <button class="delete-btn" onclick="deleteHotelFromCard(${hotel.id})">Del</button>
-                </div>
+            <div class="room-actions mt-4">
+                <button class="btn-secondary px-4 py-2 bg-gray-200 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-300" onclick="editHotel(${room.id})">Edit Hotel</button>
+                <button class="favorite-btn text-2xl" onclick="toggleFavorite(${room.id})">♡</button>
             </div>
         </div>
     `;
@@ -903,44 +840,78 @@ function validateAddBookingForm() {
     const totalPrice = parseFloat(document.getElementById('addBookingTotal').value);
     const status = document.getElementById('addBookingStatus').value;
     
-    // Basic required field validation only
+    // Check if hotel dropdown has options
+    if (hotelSelect.options.length <= 1) {
+        showNotification('No hotels available. Please create a hotel first.', 'error');
+        return false;
+    }
+    
     if (!hotelId) {
         showNotification('Please select a hotel', 'error');
+        hotelSelect.focus();
         return false;
     }
     
     if (!guestName) {
         showNotification('Guest name is required', 'error');
+        document.getElementById('addBookingGuest').focus();
         return false;
     }
     
     if (!guestEmail) {
         showNotification('Guest email is required', 'error');
+        document.getElementById('addBookingEmail').focus();
         return false;
     }
     
-    if (!checkIn || !checkOut) {
-        showNotification('Check-in and check-out dates are required', 'error');
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+        showNotification('Please enter a valid email address', 'error');
+        document.getElementById('addBookingEmail').focus();
+        return false;
+    }
+    
+    if (!checkIn) {
+        showNotification('Check-in date is required', 'error');
+        document.getElementById('addBookingCheckIn').focus();
+        return false;
+    }
+    
+    if (!checkOut) {
+        showNotification('Check-out date is required', 'error');
+        document.getElementById('addBookingCheckOut').focus();
+        return false;
+    }
+    
+    // Check if check-out is after check-in
+    if (new Date(checkOut) <= new Date(checkIn)) {
+        showNotification('Check-out date must be after check-in date', 'error');
+        document.getElementById('addBookingCheckOut').focus();
         return false;
     }
     
     if (isNaN(guests) || guests <= 0) {
         showNotification('Valid number of guests is required', 'error');
+        document.getElementById('addBookingGuests').focus();
         return false;
     }
     
     if (isNaN(rooms) || rooms <= 0) {
         showNotification('Valid number of rooms is required', 'error');
+        document.getElementById('addBookingRooms').focus();
         return false;
     }
     
     if (isNaN(totalPrice) || totalPrice <= 0) {
         showNotification('Valid total price is required', 'error');
+        document.getElementById('addBookingTotal').focus();
         return false;
     }
     
     if (!status) {
         showNotification('Booking status is required', 'error');
+        document.getElementById('addBookingStatus').focus();
         return false;
     }
     
@@ -960,44 +931,78 @@ function validateEditBookingForm() {
     const totalPrice = parseFloat(document.getElementById('editBookingTotal').value);
     const status = document.getElementById('editBookingStatus').value;
     
-    // Basic required field validation only
+    // Check if hotel dropdown has options
+    if (hotelSelect.options.length <= 1) {
+        showNotification('No hotels available. Please create a hotel first.', 'error');
+        return false;
+    }
+    
     if (!hotelId || hotelId === 'null' || isNaN(parseInt(hotelId))) {
         showNotification('Please select a valid hotel', 'error');
+        hotelSelect.focus();
         return false;
     }
     
     if (!guestName) {
         showNotification('Guest name is required', 'error');
+        document.getElementById('editBookingGuest').focus();
         return false;
     }
     
     if (!guestEmail) {
         showNotification('Guest email is required', 'error');
+        document.getElementById('editBookingEmail').focus();
         return false;
     }
     
-    if (!checkIn || !checkOut) {
-        showNotification('Check-in and check-out dates are required', 'error');
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+        showNotification('Please enter a valid email address', 'error');
+        document.getElementById('editBookingEmail').focus();
+        return false;
+    }
+    
+    if (!checkIn) {
+        showNotification('Check-in date is required', 'error');
+        document.getElementById('editBookingCheckIn').focus();
+        return false;
+    }
+    
+    if (!checkOut) {
+        showNotification('Check-out date is required', 'error');
+        document.getElementById('editBookingCheckOut').focus();
+        return false;
+    }
+    
+    // Check if check-out is after check-in
+    if (new Date(checkOut) <= new Date(checkIn)) {
+        showNotification('Check-out date must be after check-in date', 'error');
+        document.getElementById('editBookingCheckOut').focus();
         return false;
     }
     
     if (isNaN(guests) || guests <= 0) {
         showNotification('Valid number of guests is required', 'error');
+        document.getElementById('editBookingGuests').focus();
         return false;
     }
     
     if (isNaN(rooms) || rooms <= 0) {
         showNotification('Valid number of rooms is required', 'error');
+        document.getElementById('editBookingRooms').focus();
         return false;
     }
     
     if (isNaN(totalPrice) || totalPrice <= 0) {
         showNotification('Valid total price is required', 'error');
+        document.getElementById('editBookingTotal').focus();
         return false;
     }
     
     if (!status) {
         showNotification('Booking status is required', 'error');
+        document.getElementById('editBookingStatus').focus();
         return false;
     }
     
@@ -1013,9 +1018,13 @@ function validateAddHotelForm() {
         return false;
     }
     
+    console.log('Form elements in validateAddHotelForm:', form.elements);
+    
     const name = form.addHotelName ? form.addHotelName.value.trim() : '';
     const location = form.addHotelLocation ? form.addHotelLocation.value.trim() : '';
     const price = form.addHotelPrice ? parseFloat(form.addHotelPrice.value) : NaN;
+    
+    console.log('Validation check:', { name, location, price });
     
     if (!name) {
         showNotification('Hotel name is required', 'error');
@@ -1086,12 +1095,10 @@ function validateEditHotelForm() {
         return false;
     }
     
-    // Get form values
     const name = form.editHotelName ? form.editHotelName.value.trim() : '';
     const location = form.editHotelLocation ? form.editHotelLocation.value.trim() : '';
     const price = form.editHotelPrice ? parseFloat(form.editHotelPrice.value) : NaN;
     
-    // Validate required fields only
     if (!name) {
         showNotification('Hotel name is required', 'error');
         if (form.editHotelName) form.editHotelName.focus();
@@ -1116,14 +1123,7 @@ function validateEditHotelForm() {
 // Room Actions
 async function editHotel(hotelId) {
     try {
-        // Validate hotel ID
-        if (!hotelId) {
-            showNotification('Invalid hotel ID', 'error');
-            return;
-        }
-        
-        // Show loading indicator
-        showNotification('Loading hotel data...', 'info');
+        console.log('Fetching hotel data for ID:', hotelId);
         
         // Fetch current hotel data
         const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
@@ -1132,33 +1132,98 @@ async function editHotel(hotelId) {
             }
         });
         
+        console.log('Hotel API response status:', response.status);
+        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Hotel API error response:', errorText);
-            const errorMessage = `Failed to fetch hotel data: ${response.status} - ${errorText}`;
-            showNotification(errorMessage, 'error');
+            showNotification(`Failed to fetch hotel data: ${response.status} - ${errorText}`, 'error');
             return;
         }
         
         const result = await response.json();
+        console.log('Hotel API response data:', result);
         
-        if (result.success && result.hotel) {
+        if (result.success) {
             // Open edit modal with current data
             openEditHotelModal(result.hotel);
         } else {
-            const errorMessage = result.message || 'Failed to fetch hotel data';
-            showNotification(errorMessage, 'error');
+            showNotification(result.message || 'Failed to fetch hotel data', 'error');
         }
     } catch (error) {
         console.error('Error fetching hotel data:', error);
-        const errorMessage = `Error fetching hotel data: ${error.message || error}`;
-        showNotification(errorMessage, 'error');
+        showNotification(`Error fetching hotel data: ${error.message}`, 'error');a
     }
 }
 
+function openEditHotelModal(hotel) {
+    console.log('Opening edit hotel modal with data:', hotel);
+    
+    // Populate the form with hotel data
+    const editHotelId = document.getElementById('editHotelId');
+    if (editHotelId) editHotelId.value = hotel.id;
+    
+    const editHotelName = document.getElementById('editHotelName');
+    if (editHotelName) editHotelName.value = hotel.name || '';
+    
+    const editHotelLocation = document.getElementById('editHotelLocation');
+    if (editHotelLocation) editHotelLocation.value = hotel.location || '';
+    
+    const editHotelDistance = document.getElementById('editHotelDistance');
+    if (editHotelDistance) editHotelDistance.value = hotel.distance || '';
+    
+    const editHotelRating = document.getElementById('editHotelRating');
+    if (editHotelRating) editHotelRating.value = hotel.rating || '';
+    
+    const editHotelPrice = document.getElementById('editHotelPrice');
+    if (editHotelPrice) editHotelPrice.value = hotel.price || '';
+    
+    const editHotelDescription = document.getElementById('editHotelDescription');
+    if (editHotelDescription) editHotelDescription.value = hotel.description || '';
+    
+    const editHotelAmenities = document.getElementById('editHotelAmenities');
+    if (editHotelAmenities) editHotelAmenities.value = hotel.amenities ? hotel.amenities.join(', ') : '';
+    
+    // Handle image preview if hotel has an image
+    // Note: We don't set the value of file inputs for security reasons
+    // Instead, we just show the existing image in the preview
+    if (hotel.image) {
+        const preview = document.getElementById('editHotelImagePreview');
+        if (preview) {
+            const img = preview.querySelector('img');
+            if (img) {
+                img.src = hotel.image;
+                preview.classList.remove('hidden');
+            }
+        }
+    }
+    
+    // Show the modal
+    const modal = document.getElementById('editHotelModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    } else {
+        console.error('Edit hotel modal not found');
+        showNotification('Error: Edit hotel modal not found', 'error');
+    }
+}
 
-
-
+function closeAddHotelModal() {
+    const modal = document.getElementById('addHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Reset form
+        const form = document.getElementById('addHotelForm');
+        if (form) {
+            form.reset();
+            // Hide image preview
+            const preview = document.getElementById('addHotelImagePreview');
+            if (preview) {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+}
 
 function closeEditHotelModal() {
     const modal = document.getElementById('editHotelModal');
@@ -1169,19 +1234,13 @@ function closeEditHotelModal() {
         if (preview) {
             preview.classList.add('hidden');
         }
-        // Clear image data to prevent cross-contamination between hotels
-        const editHotelImageInput = document.getElementById('editHotelImage');
-        if (editHotelImageInput) {
-            delete editHotelImageInput.dataset.currentImageUrl;
-            delete editHotelImageInput.dataset.currentGallery;
-        }
     }
 }
 
-async function deleteHotelFromAvailableRooms(hotelId) {
-    if (confirm('Are you sure you want to delete this hotel? This action cannot be undone.')) {
+async function deleteRoom(roomId) {
+    if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
         try {
-            const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
+            const response = await fetch(`${API_BASE_URL}/hotels/${roomId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${currentUser?.token}`
@@ -1191,15 +1250,15 @@ async function deleteHotelFromAvailableRooms(hotelId) {
             const result = await response.json();
             
             if (result.success) {
-                showNotification(`Hotel ${hotelId} deleted successfully`, 'success');
-                // Refresh the available rooms list
+                showNotification(`Room ${roomId} deleted successfully`, 'success');
+                // Refresh the room list
                 loadAvailableRoomsData();
             } else {
-                showNotification(result.message || 'Failed to delete hotel', 'error');
+                showNotification(result.message || 'Failed to delete room', 'error');
             }
         } catch (error) {
-            console.error('Error deleting hotel:', error);
-            showNotification('Error deleting hotel', 'error');
+            console.error('Error deleting room:', error);
+            showNotification('Error deleting room', 'error');
         }
     }
 }
@@ -1209,14 +1268,15 @@ async function toggleFavorite(roomId) {
     // In a real app, update favorites in backend
 }
 
-// Track current image index for each hotel
+function previousImage(roomId) {
+    // Image carousel functionality
+    console.log(`Previous image for room ${roomId}`);
+}
 
-
-
-
-
-
-
+function nextImage(roomId) {
+    // Image carousel functionality
+    console.log(`Next image for room ${roomId}`);
+}
 
 // Booking Management Functions
 async function cancelBooking(bookingId) {
@@ -1274,17 +1334,13 @@ async function updateBookingStatus(bookingId, newStatus) {
 
 // Hotel Management Functions
 async function uploadHotelImage(file) {
-    // Create FormData for file upload with additional metadata
+    // Create FormData for file upload
     const formData = new FormData();
     formData.append('file', file);
     
-    // Generate a unique filename based on timestamp to prevent conflicts
-    const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `hotels/hotel-${timestamp}.${fileExtension}`;
-    formData.append('fileName', fileName); // Optionally pass filename to backend
-    
     try {
+        // First, we need to get the Supabase client
+        // For now, we'll make a request to our server endpoint that handles the upload
         const response = await fetch(`${API_BASE_URL}/hotels/upload-image`, {
             method: 'POST',
             headers: {
@@ -1308,6 +1364,8 @@ async function uploadHotelImage(file) {
 
 async function createNewHotel(hotelData) {
     try {
+        console.log('Creating new hotel with data:', hotelData);
+        
         const response = await fetch(`${API_BASE_URL}/hotels`, {
             method: 'POST',
             headers: {
@@ -1317,6 +1375,8 @@ async function createNewHotel(hotelData) {
             body: JSON.stringify(hotelData)
         });
         
+        console.log('Hotel creation response status:', response.status);
+        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Hotel creation error response:', errorText);
@@ -1325,6 +1385,7 @@ async function createNewHotel(hotelData) {
         }
         
         const result = await response.json();
+        console.log('Hotel creation response data:', result);
         
         if (result.success) {
             showNotification('Hotel created successfully', 'success');
@@ -1342,21 +1403,10 @@ async function createNewHotel(hotelData) {
     }
 }
 
-// Update hotel information
 async function updateHotel(hotelId, hotelData) {
     try {
-        // Validate input
-        if (!hotelId) {
-            showNotification('Hotel ID is required', 'error');
-            return null;
-        }
+        console.log('Updating hotel with ID:', hotelId, 'and data:', hotelData);
         
-        if (!hotelData || typeof hotelData !== 'object') {
-            showNotification('Hotel data is required', 'error');
-            return null;
-        }
-        
-        // Make API call to update hotel
         const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
             method: 'PUT',
             headers: {
@@ -1366,31 +1416,25 @@ async function updateHotel(hotelId, hotelData) {
             body: JSON.stringify(hotelData)
         });
         
-        // Handle HTTP errors
+        console.log('Hotel update response status:', response.status);
+        
         if (!response.ok) {
             const errorText = await response.text();
-            const errorMessage = `Failed to update hotel: ${response.status} - ${errorText}`;
-            console.error('Hotel update error:', errorMessage);
-            showNotification(errorMessage, 'error');
+            console.error('Hotel update error response:', errorText);
+            showNotification(`Failed to update hotel: ${response.status} - ${errorText}`, 'error');
             return null;
         }
         
-        // Parse response
         const result = await response.json();
+        console.log('Hotel update response data:', result);
         
         if (result.success) {
             showNotification('Hotel updated successfully', 'success');
-            
-            // Refresh both views to show updated data
-            await Promise.all([
-                loadHotelsData(), // Refresh table view
-                loadHotelsAsCards() // Refresh card view
-            ]);
-            
+            // Refresh the hotel list
+            loadHotelsData();
             return result.hotel;
         } else {
-            const errorMessage = result.message || result.error || 'Failed to update hotel';
-            showNotification(errorMessage, 'error');
+            showNotification(result.message || 'Failed to update hotel', 'error');
             return null;
         }
     } catch (error) {
@@ -1400,35 +1444,7 @@ async function updateHotel(hotelId, hotelData) {
     }
 }
 
-
 // Room Availability Functions
-// Delete hotel from card view - refreshes the card view after deletion
-async function deleteHotelFromCard(hotelId) {
-    if (confirm('Are you sure you want to delete this hotel? This action cannot be undone.')) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${currentUser?.token}`
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showNotification('Hotel deleted successfully', 'success');
-                // Refresh the hotel cards view
-                loadHotelsAsCards(); // This will refresh the card view
-            } else {
-                showNotification(result.message || 'Failed to delete hotel', 'error');
-            }
-        } catch (error) {
-            console.error('Error deleting hotel:', error);
-            showNotification('Error deleting hotel', 'error');
-        }
-    }
-}
-
 async function updateRoomAvailability(roomId, isAvailable) {
     try {
         const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`, {
@@ -1458,6 +1474,7 @@ async function updateRoomAvailability(roomId, isAvailable) {
 // Handle window resize
 function handleResize() {
     // Implement responsive behavior if needed
+    console.log('Window resized');
 }
 
 // Close modal when clicking outside
@@ -1477,6 +1494,7 @@ function setupModalCloseHandlers() {
 function handleGlobalSearch(e) {
     const searchTerm = e.target.value.toLowerCase();
     // Implement global search across all data
+    console.log('Global search:', searchTerm);
 }
 
 function handleRoomSearch(e) {
@@ -1505,7 +1523,7 @@ function handleRoomSearch(e) {
                 <td>
                     <div class="action-buttons">
                         <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit">✏️</button>
-                        <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete">🗑️</button>
+                        <button class="action-btn delete" onclick="deleteRoom(${room.id})" title="Delete">🗑️</button>
                     </div>
                 </td>
             `;
@@ -1525,7 +1543,12 @@ function formatDate(dateString) {
     });
 }
 
-
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(amount || 0);
+}
 
 function showNotification(message, type = 'info', duration = 3000) {
     // Remove any existing notifications
@@ -1565,8 +1588,48 @@ function showNotification(message, type = 'info', duration = 3000) {
     return notification;
 }
 
+function hideNotification(notification) {
+    if (notification) {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }
+}
 
-
+// API Error Handling
+function handleApiError(error, operation = 'operation') {
+    console.error(`${operation} error:`, error);
+    
+    let title = 'Error';
+    let message = 'An unexpected error occurred. Please try again.';
+    
+    // Handle different types of errors
+    if (error.name === 'NetworkError' || 
+        (error.message && (error.message.includes('Network Error') || error.message.includes('Failed to fetch')))) {
+        title = 'Network Error';
+        message = 'Please check your internet connection and try again.';
+    } else if (error.name === 'ValidationError') {
+        title = 'Validation Error';
+        message = error.message;
+    } else if (error.name === 'AuthenticationError') {
+        title = 'Authentication Error';
+        message = 'Please log in again.';
+    } else if (error.code === '42501') {
+        title = 'Access Denied';
+        message = 'You do not have permission to perform this action.';
+    } else if (error.code === '23505') {
+        title = 'Duplicate Entry';
+        message = 'This item already exists.';
+    } else if (error.message) {
+        // Use the error message if available
+        message = error.message;
+    }
+    
+    showNotification(message, 'error');
+}
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
@@ -1925,6 +1988,8 @@ function closeAddBookingModal() {
 function openEditBookingModal(booking) {
     const modal = document.getElementById('editBookingModal');
     if (modal && booking) {
+        console.log('Opening edit booking modal with booking data:', booking);
+        
         // Validate required booking data
         if (!booking.id) {
             console.error('Booking ID is missing');
@@ -1946,6 +2011,10 @@ function openEditBookingModal(booking) {
         document.getElementById('editBookingRooms').value = booking.rooms || 1;
         document.getElementById('editBookingTotal').value = booking.total_price || '';
         document.getElementById('editBookingStatus').value = booking.status || 'pending';
+        
+        // Log the booking ID that was set
+        console.log('Set editBookingId value to:', booking.id);
+        console.log('Type of booking.id:', typeof booking.id);
         
         // Populate hotel dropdown and set the selected value after it's loaded
         populateHotelDropdown('editBookingHotel').then(() => {
@@ -1987,13 +2056,146 @@ function closeEditBookingModal() {
     }
 }
 
+// Test function to check if the booking API is working
+async function testBookingAPI() {
+    try {
+        console.log('Testing booking API connection...');
+        console.log('Current user:', currentUser);
+        console.log('API Base URL:', API_BASE_URL);
+        
+        if (!currentUser || !currentUser.token) {
+            console.error('User not authenticated');
+            showNotification('Please log in first', 'error');
+            return false;
+        }
+        
+        // Test getting bookings
+        const response = await fetch(`${API_BASE_URL}/bookings?limit=5`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Booking API test response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Booking API test failed with status:', response.status, 'Response:', errorText);
+            showNotification(`Booking API test failed: ${response.status} - ${errorText}`, 'error');
+            return false;
+        }
+        
+        const result = await response.json();
+        console.log('Booking API test result:', result);
+        
+        if (result.success) {
+            console.log(`Successfully fetched ${result.bookings ? result.bookings.length : 0} bookings`);
+            showNotification(`Successfully connected to booking API. Found ${result.bookings ? result.bookings.length : 0} bookings.`, 'success');
+            return true;
+        } else {
+            console.error('Booking API test failed:', result.message);
+            showNotification(`Booking API test failed: ${result.message || 'Unknown error'}`, 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Booking API test error:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        let errorMessage = 'Network error';
+        if (error.name === 'TypeError') {
+            if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+                errorMessage = 'Failed to connect to server. Please make sure the server is running and you have an internet connection.';
+            } else if (error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+                errorMessage = 'Internet connection error. Please check your network connection.';
+            } else {
+                errorMessage = error.message || 'Connection error';
+            }
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showNotification(`Booking API test error: ${errorMessage}`, 'error');
+        return false;
+    }
+}
 
-
-
+// Test function to check if hotels API is working
+async function testHotelAPI() {
+    try {
+        console.log('Testing hotel API connection...');
+        console.log('Current user:', currentUser);
+        console.log('API Base URL:', API_BASE_URL);
+        
+        if (!currentUser || !currentUser.token) {
+            console.error('User not authenticated');
+            showNotification('Please log in first', 'error');
+            return false;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/hotels?limit=5`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser.token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Hotel API test response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Hotel API test failed with status:', response.status, 'Response:', errorText);
+            showNotification(`Hotel API test failed: ${response.status} - ${errorText}`, 'error');
+            return false;
+        }
+        
+        const result = await response.json();
+        console.log('Hotel API test result:', result);
+        
+        if (result.success && result.hotels) {
+            console.log(`Successfully fetched ${result.hotels.length} hotels`);
+            showNotification(`Successfully connected to hotel API. Found ${result.hotels.length} hotels.`, 'success');
+            return true;
+        } else {
+            console.error('Hotel API test failed:', result.message);
+            showNotification(`Hotel API test failed: ${result.message || 'Unknown error'}`, 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Hotel API test error:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        let errorMessage = 'Network error';
+        if (error.name === 'TypeError') {
+            if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+                errorMessage = 'Failed to connect to server. Please make sure the server is running and you have an internet connection.';
+            } else if (error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+                errorMessage = 'Internet connection error. Please check your network connection.';
+            } else {
+                errorMessage = error.message || 'Connection error';
+            }
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showNotification(`Hotel API test error: ${errorMessage}`, 'error');
+        return false;
+    }
+}
 
 // Helper function to populate hotel dropdown
 async function populateHotelDropdown(selectId) {
     try {
+        // Debug information
+        console.log('populateHotelDropdown called with selectId:', selectId);
+        console.log('Current user:', currentUser);
+        console.log('API Base URL:', API_BASE_URL);
+        console.log('Full URL being called:', `${window.location.origin}${API_BASE_URL}/hotels?limit=1000`);
+        
         // Check if user is logged in
         if (!currentUser || !currentUser.token) {
             console.error('User not logged in or token missing');
@@ -2008,6 +2210,9 @@ async function populateHotelDropdown(selectId) {
             }
         });
         
+        console.log('Hotel API response status:', response.status);
+        console.log('Hotel API response headers:', [...response.headers.entries()]);
+        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Hotel API error response:', errorText);
@@ -2015,6 +2220,7 @@ async function populateHotelDropdown(selectId) {
         }
         
         const result = await response.json();
+        console.log('Hotel API response data:', result);
         
         if (result.success) {
             const selectElement = document.getElementById(selectId);
@@ -2072,9 +2278,196 @@ async function populateHotelDropdown(selectId) {
     }
 }
 
+// Helper function to filter hotels in dropdown
+function filterHotels(selectId, searchTerm) {
+    const selectElement = document.getElementById(selectId);
+    if (!selectElement || !selectElement.hotelData) return;
+    
+    // Clear current options except the default
+    selectElement.innerHTML = '<option value="">Select a hotel</option>';
+    
+    // Filter and add matching hotels
+    if (searchTerm) {
+        const filteredHotels = selectElement.hotelData.filter(hotel => 
+            hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hotel.location.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        filteredHotels.forEach(hotel => {
+            const option = document.createElement('option');
+            option.value = hotel.id;
+            option.textContent = `${hotel.name} (${hotel.location})`;
+            option.setAttribute('data-hotel-name', hotel.name);
+            option.setAttribute('data-hotel-location', hotel.location);
+            selectElement.appendChild(option);
+        });
+    } else {
+        // If no search term, show all hotels
+        selectElement.hotelData.forEach(hotel => {
+            const option = document.createElement('option');
+            option.value = hotel.id;
+            option.textContent = `${hotel.name} (${hotel.location})`;
+            option.setAttribute('data-hotel-name', hotel.name);
+            option.setAttribute('data-hotel-location', hotel.location);
+            selectElement.appendChild(option);
+        });
+    }
+}
 
+// Report and Analytics Functions
+async function loadReportsData() {
+    try {
+        // Load dashboard statistics
+        const statsResponse = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser?.token}`
+            }
+        });
+        const statsResult = await statsResponse.json();
+        
+        if (statsResult.success) {
+            const stats = statsResult.stats;
+            document.getElementById('totalCustomers').textContent = stats.customers || 0;
+            document.getElementById('totalBookings').textContent = stats.bookings || 0;
+            document.getElementById('totalRevenue').textContent = `${(stats.payments || 0).toLocaleString()}`;
+            document.getElementById('totalHotels').textContent = stats.hotels || 0;
+        }
+        
+        // Load chart data (mock data for now)
+        renderCharts();
+    } catch (error) {
+        console.error('Error loading reports data:', error);
+        showNotification('Error loading reports data', 'error');
+    }
+}
 
+function renderCharts() {
+    // For now, we'll mock the charts
+    // In a real app, you would use Chart.js or another charting library
+    console.log('Rendering charts...');
+}
 
+// Financial Management Functions
+async function loadFinancialsData() {
+    try {
+        // Load financial statistics
+        const statsResponse = await fetch(`${API_BASE_URL}/admin/financials/stats`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser?.token}`
+            }
+        });
+        const statsResult = await statsResponse.json();
+        
+        if (statsResult.success) {
+            const stats = statsResult.stats;
+            document.getElementById('monthlyRevenue').textContent = `${(stats.monthlyRevenue || 0).toLocaleString()}`;
+            document.getElementById('pendingPayments').textContent = stats.pendingPayments || 0;
+            document.getElementById('refundedAmount').textContent = `${(stats.refundedAmount || 0).toLocaleString()}`;
+            document.getElementById('commissionEarned').textContent = `${(stats.commissionEarned || 0).toLocaleString()}`;
+        }
+        
+        // Load transactions
+        loadTransactionsData();
+    } catch (error) {
+        console.error('Error loading financials data:', error);
+        showNotification('Error loading financials data', 'error');
+    }
+}
+
+let currentTransactionsPage = 1;
+let totalTransactionsPages = 1;
+
+async function loadTransactionsData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/transactions?page=${currentTransactionsPage}&limit=10`, {
+            headers: {
+                'Authorization': `Bearer ${currentUser?.token}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const transactions = result.transactions || [];
+            const pagination = result.pagination || {};
+            
+            renderTransactionsTable(transactions);
+            updateTransactionsPagination(pagination);
+        } else {
+            showNotification(result.message || 'Failed to load transactions', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+        showNotification('Error loading transactions', 'error');
+    }
+}
+
+function renderTransactionsTable(transactions) {
+    const tableBody = document.getElementById('transactionsTableBody');
+    if (!tableBody) return;
+    
+    if (!transactions || transactions.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-left p-4">No transactions found</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    
+    transactions.forEach(transaction => {
+        const statusClass = `status-${transaction.status}`;
+        const typeClass = transaction.type === 'credit' ? 'text-success' : 'text-danger';
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="text-left p-4 border-b">${transaction.id}</td>
+            <td class="text-left p-4 border-b">${formatDate(transaction.date)}</td>
+            <td class="text-left p-4 border-b">${transaction.description}</td>
+            <td class="text-left p-4 border-b"><span class="${typeClass}">${transaction.type}</span></td>
+            <td class="text-left p-4 border-b">${parseFloat(transaction.amount).toFixed(2)}</td>
+            <td class="text-left p-4 border-b"><span class="status-badge ${statusClass}">${transaction.status}</span></td>
+            <td class="text-left p-4 border-b">
+                <div class="action-buttons">
+                    <button class="action-btn view" onclick="viewTransaction(${transaction.id})" title="View">👁️</button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function updateTransactionsPagination(pagination) {
+    const totalCount = pagination.totalCount || 0;
+    const currentPage = pagination.currentPage || 1;
+    const totalPages = pagination.totalPages || 1;
+    
+    document.getElementById('transactionsTotalCount').textContent = totalCount;
+    document.getElementById('currentTransactionsPage').textContent = currentPage;
+    document.getElementById('totalTransactionsPages').textContent = totalPages;
+    
+    const prevBtn = document.getElementById('prevTransactionsPage');
+    const nextBtn = document.getElementById('nextTransactionsPage');
+    
+    if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+    }
+    
+    if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+    }
+    
+    currentTransactionsPage = currentPage;
+    totalTransactionsPages = totalPages;
+}
+
+function loadTransactionsPage(page) {
+    if (page < 1 || page > totalTransactionsPages) return;
+    currentTransactionsPage = page;
+    loadTransactionsData();
+}
+
+function viewTransaction(transactionId) {
+    showNotification(`Viewing details for transaction ${transactionId}`, 'info');
+    // In a real app, you would open a modal with transaction details
+}
 
 // Form Submission Handlers
 document.addEventListener('DOMContentLoaded', function() {
@@ -2084,13 +2477,30 @@ document.addEventListener('DOMContentLoaded', function() {
         addHotelForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            console.log('Form submission triggered');
+            console.log('Form element:', this);
+            console.log('Form elements:', this.elements);
+            
             // Validate form before submission
             if (!validateAddHotelForm()) {
+                console.log('Form validation failed');
                 return;
             }
             
             const formData = new FormData(this);
+            console.log('FormData entries:', [...formData.entries()]);
             const imageFile = formData.get('addHotelImage');
+            
+            // Log form data for debugging
+            console.log('Form data:', {
+                name: formData.get('addHotelName'),
+                location: formData.get('addHotelLocation'),
+                distance: formData.get('addHotelDistance'),
+                rating: formData.get('addHotelRating'),
+                price: formData.get('addHotelPrice'),
+                description: formData.get('addHotelDescription'),
+                amenities: formData.get('addHotelAmenities')
+            });
             
             // Upload image if provided
             let imageUrl = '';
@@ -2151,68 +2561,49 @@ document.addEventListener('DOMContentLoaded', function() {
         editHotelForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            console.log('Edit form submission triggered');
+            console.log('Edit form element:', this);
+            console.log('Edit form elements:', this.elements);
+            
             // Validate form before submission
             if (!validateEditHotelForm()) {
                 return;
             }
             
             const formData = new FormData(this);
+            console.log('Edit FormData entries:', [...formData.entries()]);
             const hotelId = formData.get('editHotelId');
             const imageFile = formData.get('editHotelImage');
             
-            // Get form values
-            const name = document.getElementById('editHotelName').value;
-            const location = document.getElementById('editHotelLocation').value;
-            const distance = document.getElementById('editHotelDistance').value || 'unknown - distance not specified';
-            const rating = parseFloat(document.getElementById('editHotelRating').value) || null;
-            const price = parseFloat(document.getElementById('editHotelPrice').value) || 0;
-            const description = document.getElementById('editHotelDescription').value || 'No description provided';
-            const amenitiesText = document.getElementById('editHotelAmenities').value || '';
-            const amenities = amenitiesText ? amenitiesText.split(',').map(a => a.trim()).filter(a => a) : [];
+            // Get existing hotel data
+            let hotelData = {
+                name: formData.get('editHotelName'),
+                location: formData.get('editHotelLocation'),
+                distance: formData.get('editHotelDistance') || '',
+                rating: parseFloat(formData.get('editHotelRating')) || null,
+                price: parseFloat(formData.get('editHotelPrice')) || 0,
+                description: formData.get('editHotelDescription') || '',
+                amenities: formData.get('editHotelAmenities') ? formData.get('editHotelAmenities').split(',').map(a => a.trim()).filter(a => a) : []
+            };
+            
+            // Upload new image if provided
+            if (imageFile && imageFile.size > 0) {
+                try {
+                    const imageUrl = await uploadHotelImage(imageFile);
+                    if (imageUrl) {
+                        hotelData.image = imageUrl;
+                    } else {
+                        showNotification('Failed to upload new image, but hotel will still be updated', 'warning');
+                        // Continue without updating image
+                    }
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    showNotification('Failed to upload new image, but hotel will still be updated', 'warning');
+                    // Continue without updating image
+                }
+            }
             
             try {
-                // Prepare hotel data
-                let hotelData = {
-                    name: name,
-                    location: location,
-                    distance: distance,
-                    rating: rating,
-                    price: price,
-                    description: description,
-                    amenities: amenities
-                };
-                
-                // Handle image upload if a new image is selected
-                const imageInput = document.getElementById('editHotelImage');
-                
-                // Check if a new file has been selected
-                if (imageInput && imageInput.files && imageInput.files.length > 0) {
-                    const newImageFile = imageInput.files[0];
-                    if (newImageFile && newImageFile.size > 0) {
-                        try {
-                            const imageUrl = await uploadHotelImage(newImageFile);
-                            if (imageUrl) {
-                                hotelData.image = imageUrl;
-                                // Don't set gallery - just use the main image
-                                console.log('New image uploaded successfully:', imageUrl);
-                            } else {
-                                showNotification('Failed to upload new image, but hotel details will still be updated', 'warning');
-                            }
-                        } catch (uploadError) {
-                            console.error('Image upload error:', uploadError);
-                            showNotification('Failed to upload image, but hotel details will still be updated', 'warning');
-                        }
-                    }
-                } else {
-                    // If no new image selected, use existing image data
-                    if (imageInput && imageInput.dataset.currentImageUrl) {
-                        hotelData.image = imageInput.dataset.currentImageUrl;
-                    }
-                }
-                
-                // Don't include gallery in the update - only use the main image
-                
-                // Make the API call to update the hotel
                 const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`, {
                     method: 'PUT',
                     headers: {
@@ -2224,28 +2615,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const result = await response.json();
                 
-                if (response.ok && result.success) {
+                if (result.success) {
                     showNotification('Hotel updated successfully', 'success');
                     closeEditHotelModal();
-                    
-                    // Refresh both views to reflect changes
-                    loadHotelsData(); // For table view
-                    loadHotelsAsCards(); // For card view
-                    
-                    // Force refresh of current view to show updated image immediately
-                    if (currentPage === 'rooms' || currentPage === 'hotels') {
-                        loadHotelsAsCards();
-                    } else if (currentPage === 'hotel-management') {  // if this page exists
-                        loadHotelsData();
-                    }
+                    loadHotelsData(); // Refresh the hotel list
                 } else {
-                    const errorMessage = result.message || result.error || 'Failed to update hotel';
-                    showNotification(errorMessage, 'error');
-                    console.error('Hotel update failed:', result);
+                    showNotification(result.message || 'Failed to update hotel', 'error');
                 }
             } catch (error) {
-                console.error('Error in hotel update process:', error);
-                showNotification(`Error updating hotel: ${error.message}`, 'error');
+                console.error('Error updating hotel:', error);
+                showNotification('Error updating hotel', 'error');
             }
         });
     }
@@ -2388,6 +2767,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error fetching hotel details:', error);
             }
             
+            // Log the data being sent for debugging
+            console.log('Creating booking with data:', bookingData);
+            
             try {
                 const response = await fetch(`${API_BASE_URL}/bookings`, {
                     method: 'POST',
@@ -2398,7 +2780,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(bookingData)
                 });
                 
+                // Log the response for debugging
+                console.log('Booking creation response status:', response.status);
+                
                 const result = await response.json();
+                console.log('Booking creation response data:', result);
                 
                 if (result.success) {
                     showNotification('Booking created successfully', 'success');
@@ -2437,6 +2823,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const rooms = document.getElementById('editBookingRooms').value;
             const totalPrice = document.getElementById('editBookingTotal').value;
             const status = document.getElementById('editBookingStatus').value;
+            
+            // Log the values for debugging
+            console.log('Form values:', {
+                bookingId,
+                hotelId,
+                guestName,
+                guestEmail,
+                guestPhone,
+                checkIn,
+                checkOut,
+                guests,
+                rooms,
+                totalPrice,
+                status
+            });
             
             // Validate required fields
             if (!bookingId || bookingId === 'null') {
@@ -2502,6 +2903,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: status || 'pending'
             };
             
+            console.log('Sending booking update request:', {
+                url: `${API_BASE_URL}/bookings/${parsedBookingId}`,
+                method: 'PUT',
+                data: bookingData
+            });
+            
             try {
                 // Try to fetch hotel name for the booking data
                 try {
@@ -2537,7 +2944,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(bookingData)
                 });
                 
+                console.log('Booking update response status:', response.status);
+                
                 const responseText = await response.text();
+                console.log('Booking update response text:', responseText);
                 
                 // Try to parse as JSON, but handle if it's not valid JSON
                 let result;
@@ -2553,6 +2963,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const errorDetails = result.details ? `Details: ${result.details}` : '';
                     throw new Error(`HTTP error! status: ${response.status}, message: ${errorMessage} ${errorDetails}`);
                 }
+                
+                console.log('Booking update result:', result);
                 
                 if (result.success) {
                     showNotification('Booking updated successfully', 'success');
@@ -2590,14 +3002,9 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentHotelsPage = 1;
 let totalHotelsPages = 1;
 
-// Global variable to store search term for table view
-let tableViewSearchTerm = '';
-
 async function loadHotelsData() {
     try {
-        // Add search parameter if there's a search term
-        const searchParam = tableViewSearchTerm ? `&search=${encodeURIComponent(tableViewSearchTerm)}` : '';
-        const response = await fetch(`${API_BASE_URL}/hotels?page=${currentHotelsPage}&limit=10${searchParam}`, {
+        const response = await fetch(`${API_BASE_URL}/hotels?page=${currentHotelsPage}&limit=10`, {
             headers: {
                 'Authorization': `Bearer ${currentUser?.token}`
             }
@@ -2618,13 +3025,6 @@ async function loadHotelsData() {
         console.error('Error loading hotels:', error);
         showNotification('Error loading hotels', 'error');
     }
-}
-
-// Search handler for table view
-function handleHotelTableSearch(searchTerm) {
-    tableViewSearchTerm = searchTerm;
-    currentHotelsPage = 1; // Reset to first page when searching
-    loadHotelsData();
 }
 
 function renderHotelsTable(hotels) {
@@ -2754,24 +3154,7 @@ function openEditHotelModal(hotel) {
         document.getElementById('editHotelDistance').value = hotel.distance || '';
         document.getElementById('editHotelRating').value = hotel.rating || '';
         document.getElementById('editHotelPrice').value = hotel.price || '';
-        // Note: We don't set the value of file inputs for security reasons, but we store the current image URL and gallery
-        const editHotelImageInput = document.getElementById('editHotelImage');
-        if (editHotelImageInput) {
-            // Clear previous data first to avoid confusion
-            delete editHotelImageInput.dataset.currentImageUrl;
-            delete editHotelImageInput.dataset.currentGallery;
-            
-            // Set data for this specific hotel
-            if (hotel.image) {
-                editHotelImageInput.dataset.currentImageUrl = hotel.image;
-            }
-            if (hotel.gallery) {
-                editHotelImageInput.dataset.currentGallery = JSON.stringify(hotel.gallery);
-            } else if (hotel.image) {
-                // Create a default gallery if none exists
-                editHotelImageInput.dataset.currentGallery = JSON.stringify([hotel.image]);
-            }
-        }
+        // Note: We don't set the value of file inputs for security reasons
         document.getElementById('editHotelDescription').value = hotel.description || '';
         document.getElementById('editHotelAmenities').value = hotel.amenities ? hotel.amenities.join(', ') : '';
         
@@ -2780,6 +3163,18 @@ function openEditHotelModal(hotel) {
         const firstInput = modal.querySelector('input, textarea, select');
         if (firstInput) {
             setTimeout(() => firstInput.focus(), 100);
+        }
+    }
+}
+
+function closeEditHotelModal() {
+    const modal = document.getElementById('editHotelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Hide image preview
+        const preview = document.getElementById('editHotelImagePreview');
+        if (preview) {
+            preview.classList.add('hidden');
         }
     }
 }
@@ -2793,7 +3188,7 @@ window.HotelApp = {
     showNotification,
     exportBookingData,
     editHotel,
-    deleteHotelFromAvailableRooms,
+    deleteRoom,
     toggleFavorite,
     cancelBooking,
     updateBookingStatus,
@@ -2809,11 +3204,8 @@ window.HotelApp = {
     // New functions
     loadUsersData,
     loadBookingsData,
-    loadHotelsAsCards,
-    deleteHotelFromCard,
-    handleHotelTableSearch,
-    handleHotelCardSearch,
-    loadCardViewPage,
+    loadReportsData,
+    loadFinancialsData,
     openAddUserModal,
     closeAddUserModal,
     openEditUserModal,
@@ -2824,8 +3216,5 @@ window.HotelApp = {
     openEditBookingModal,
     closeEditBookingModal,
     deleteBooking,
-    // State management functions
-    saveAppState,
-    loadAppState,
-    clearAppState
+    viewTransaction
 };
