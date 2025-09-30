@@ -137,16 +137,18 @@
       <!-- Header -->
       <header class="header flex justify-between items-center p-5 bg-white shadow-sm z-99">
         <div class="search-bar flex items-center bg-gray-100 rounded-full px-4 py-2 w-80">
-          <span class="search-icon mr-2 text-gray-500">🔍</span>
+          <i data-lucide="search" class="search-icon mr-2 text-gray-500 w-4 h-4"></i>
           <input type="text" placeholder="Search" id="globalSearch" class="bg-transparent outline-none w-full text-sm">
         </div>
         <div class="header-right flex items-center gap-5">
-          <div class="notification text-xl cursor-pointer">🔔</div>
-          <div class="language-selector flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-full cursor-pointer">
+          <div class="notification text-xl cursor-pointer">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+          </div>
+          <!-- <div class="language-selector flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-full cursor-pointer">
             <span>🇬🇧</span>
             <span class="text-sm">English</span>
-            <span>⌄</span>
-          </div>
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </div> -->
           <div class="user-profile flex items-center gap-3 cursor-pointer">
             <div
               class="user-avatar w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold"
@@ -157,7 +159,7 @@
               <div class="user-name text-sm font-semibold" id="userName">Kha Kha</div>
               <div class="user-role text-xs text-gray-500" id="userRole">Admin</div>
             </div>
-            <span>⌄</span>
+            <!-- <span>⌄</span> -->
           </div>
         </div>
       </header>
@@ -171,7 +173,8 @@
           <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
             <div
               class="stat-icon customers w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-blue-500 to-purple-600">
-              👥</div>
+              <i data-lucide="users" class="w-6 h-6 text-white"></i>
+            </div>
             <div class="stat-info">
               <h3 id="totalCustomers" class="text-2xl font-bold">406</h3>
               <p class="text-gray-500 text-sm">Total Customer</p>
@@ -180,7 +183,8 @@
           <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
             <div
               class="stat-icon bookings w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-pink-400 to-red-500">
-              📦</div>
+              <i data-lucide="package" class="w-6 h-6 text-white"></i>
+            </div>
             <div class="stat-info">
               <h3 id="totalBookings" class="text-2xl font-bold">102</h3>
               <p class="text-gray-500 text-sm">Total Booking</p>
@@ -189,7 +193,8 @@
           <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
             <div
               class="stat-icon payments w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-green-400 to-teal-500">
-              💰</div>
+              <i data-lucide="dollar-sign" class="w-6 h-6 text-white"></i>
+            </div>
             <div class="stat-info">
               <h3 id="totalRevenue" class="text-2xl font-bold">$891,000</h3>
               <p class="text-gray-500 text-sm">Total Payment</p>
@@ -198,7 +203,8 @@
           <div class="stat-card bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
             <div
               class="stat-icon rooms w-15 h-15 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-r from-yellow-400 to-orange-500">
-              🏠</div>
+              <i data-lucide="home" class="w-6 h-6 text-white"></i>
+            </div>
             <div class="stat-info">
               <h3 id="totalHotels" class="text-2xl font-bold">20</h3>
               <p class="text-gray-500 text-sm">Hotels</p>
@@ -271,12 +277,14 @@
             <div class="pagination flex items-center gap-2">
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadHotelsPage(currentHotelsPage - 1)" id="prevHotelsPage" disabled>⟨</button>
+                onclick="loadHotelsPage(currentHotelsPage - 1)" id="prevHotelsPage" disabled><i
+                  data-lucide="chevron-left" class="w-4 h-4"></i></button>
               <span id="hotelsPageInfo" class="text-gray-600">Page <span id="currentHotelsPage">1</span> of <span
                   id="totalHotelsPages">1</span></span>
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onclick="loadHotelsPage(currentHotelsPage + 1)" id="nextHotelsPage" disabled>⟩</button>
+                onclick="loadHotelsPage(currentHotelsPage + 1)" id="nextHotelsPage" disabled><i
+                  data-lucide="chevron-right" class="w-4 h-4"></i></button>
             </div>
           </div>
         </div>
@@ -288,7 +296,7 @@
           <h1 class="page-title text-3xl font-bold text-gray-800">Hotel Management</h1>
           <div class="flex items-center gap-4">
             <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
-              <span class="search-icon mr-2 text-gray-500">🔍</span>
+              <i data-lucide="search" class="search-icon mr-2 text-gray-500 w-4 h-4"></i>
               <input type="text" placeholder="Search hotels..." id="hotelCardSearch"
                 class="bg-transparent outline-none w-full text-sm" oninput="handleHotelCardSearch(this.value)">
             </div>
@@ -308,12 +316,14 @@
             <div class="pagination flex items-center gap-2">
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                id="prevCardViewPage" onclick="loadCardViewPage(currentCardViewPage - 1)" disabled>⟨</button>
+                id="prevCardViewPage" onclick="loadCardViewPage(currentCardViewPage - 1)" disabled><i
+                  data-lucide="chevron-left" class="w-4 h-4"></i></button>
               <span id="cardViewPageInfo" class="text-gray-600">Page <span id="currentCardViewPage">1</span> of <span
                   id="totalCardViewPages">1</span></span>
               <button
                 class="pagination-btn px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                id="nextCardViewPage" onclick="loadCardViewPage(currentCardViewPage + 1)" disabled>⟩</button>
+                id="nextCardViewPage" onclick="loadCardViewPage(currentCardViewPage + 1)" disabled><i
+                  data-lucide="chevron-right" class="w-4 h-4"></i></button>
             </div>
           </div>
         </div>
@@ -450,7 +460,7 @@
           <h1 class="page-title text-3xl font-bold text-gray-800">Booking Management</h1>
           <div class="flex items-center gap-4">
             <div class="search-bar small flex items-center bg-gray-100 rounded-full px-4 py-2 w-64">
-              <span class="search-icon mr-2 text-gray-500">🔍</span>
+              <i data-lucide="search" class="search-icon mr-2 text-gray-500 w-4 h-4"></i>
               <input type="text" placeholder="Search bookings..." id="bookingSearch"
                 class="bg-transparent outline-none w-full text-sm">
             </div>
@@ -1024,6 +1034,35 @@
       </div>
     </div>
   </div>
+
+  <!-- Include Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    // Initialize Lucide icons when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+    
+    // Also refresh icons after any DOM updates with a slight delay
+    const observer = new MutationObserver(function(mutations) {
+      // Debounce the icon refresh to avoid too frequent updates
+      clearTimeout(window.iconRefreshTimeout);
+      window.iconRefreshTimeout = setTimeout(function() {
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }, 100);
+    });
+    
+    // Observe changes to the whole document
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  </script>
 
   <script src="JS/script.js"></script>
 </body>

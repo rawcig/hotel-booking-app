@@ -698,6 +698,11 @@ function renderDashboardContent() {
         `;
         tableBody.appendChild(row);
     });
+    
+    // Reinitialize Lucide icons after content is added
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function renderHotelsAsCards() {
@@ -739,8 +744,8 @@ function renderBookingListContent() {
             <td class="text-left p-4 border-b"><span class="status-badge status-${booking.paymentStatus.toLowerCase().replace(' ', '-')}">${booking.paymentStatus}</span></td>
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="updateBookingStatus(${booking.id}, 'confirmed')" title="Confirm">✓</button>
-                    <button class="action-btn delete" onclick="cancelBooking(${booking.id})" title="Cancel">✕</button>
+                    <button class="action-btn edit" onclick="updateBookingStatus(${booking.id}, 'confirmed')" title="Confirm"><i data-lucide="check" class="w-4 h-4"></i></button>
+                    <button class="action-btn delete" onclick="cancelBooking(${booking.id})" title="Cancel"><i data-lucide="x" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;
@@ -772,8 +777,8 @@ function renderAvailableRoomsContent() {
             <td class="text-left p-4 border-b">${room.floor}</td>
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit">✏️</button>
-                    <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete">🗑️</button>
+                    <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;
@@ -1504,8 +1509,8 @@ function handleRoomSearch(e) {
                 <td>${room.floor}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit">✏️</button>
-                        <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete">🗑️</button>
+                        <button class="action-btn edit" onclick="editHotel(${room.id})" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                        <button class="action-btn delete" onclick="deleteHotelFromAvailableRooms(${room.id})" title="Delete"><div class="icon-trash-2"></div></button>
                     </div>
                 </td>
             `;
@@ -1626,13 +1631,18 @@ function renderUsersTable(users) {
             <td class="text-left p-4 border-b">${formatDate(user.joined_date)}</td>
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="openEditUserModal(${JSON.stringify(user).replace(/"/g, '&quot;')})" title="Edit">✏️</button>
-                    <button class="action-btn delete" onclick="deleteUser(${user.id})" title="Delete">🗑️</button>
+                    <button class="action-btn edit" onclick="openEditUserModal(${JSON.stringify(user).replace(/"/g, '&quot;')})" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button class="action-btn delete" onclick="deleteUser(${user.id})" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;
         tableBody.appendChild(row);
     });
+    
+    // Reinitialize Lucide icons after content is added
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function updateUsersPagination(pagination) {
@@ -1819,13 +1829,18 @@ function renderBookingsTable(bookings) {
             <td class="text-left p-4 border-b">${parseFloat(booking.total_price || 0).toFixed(2)}</td>
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="openEditBookingModal(${JSON.stringify(cleanBooking).replace(/"/g, '&quot;')})" title="Edit">✏️</button>
-                    <button class="action-btn delete" onclick="deleteBooking(${booking.id})" title="Delete">🗑️</button>
+                    <button class="action-btn edit" onclick="openEditBookingModal(${JSON.stringify(cleanBooking).replace(/"/g, '&quot;')})" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button class="action-btn delete" onclick="deleteBooking(${booking.id})" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;
         tableBody.appendChild(row);
     });
+    
+    // Reinitialize Lucide icons after content is added
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function updateBookingsPagination(pagination) {
@@ -2158,7 +2173,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const formData = new FormData(this);
             const hotelId = formData.get('editHotelId');
-            const imageFile = formData.get('editHotelImage');
+            // const imageFile = formData.get('editHotelImage');
             
             // Get form values
             const name = document.getElementById('editHotelName').value;
@@ -2543,7 +2558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let result;
                 try {
                     result = JSON.parse(responseText);
-                } catch (parseError) {
+                } catch (Error) {
                     console.error('Could not parse response as JSON:', responseText);
                     throw new Error(`Server returned non-JSON response: ${responseText}`);
                 }
@@ -2648,13 +2663,18 @@ function renderHotelsTable(hotels) {
             <td class="text-left p-4 border-b">${parseFloat(hotel.price).toFixed(2)}</td>
             <td class="text-left p-4 border-b">
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="openEditHotelModal(${JSON.stringify(hotel).replace(/"/g, '&quot;')})" title="Edit">✏️</button>
-                    <button class="action-btn delete" onclick="deleteHotel(${hotel.id})" title="Delete">🗑️</button>
+                    <button class="action-btn edit" onclick="openEditHotelModal(${JSON.stringify(hotel).replace(/"/g, '&quot;')})" title="Edit"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                    <button class="action-btn delete" onclick="deleteHotel(${hotel.id})" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </td>
         `;
         tableBody.appendChild(row);
     });
+    
+    // Reinitialize Lucide icons after content is added
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function updateHotelsPagination(pagination) {
@@ -2787,6 +2807,13 @@ function openEditHotelModal(hotel) {
 // Placeholder for exportBookingData function
 function exportBookingData() {
     showNotification('Booking data export functionality would be implemented here', 'info');
+}
+
+// Helper function to refresh Lucide icons
+function refreshIcons() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 window.HotelApp = {
