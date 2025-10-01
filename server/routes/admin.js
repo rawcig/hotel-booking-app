@@ -10,6 +10,8 @@ const { supabase } = require('../lib/supabase');
 router.use(authenticateAdmin);
 router.use(authorizeAdmin);
 
+
+
 // Get dashboard statistics
 router.get('/dashboard/stats', async (req, res) => {
   try {
@@ -25,26 +27,37 @@ router.get('/dashboard/stats', async (req, res) => {
         error: hotelsError.message
       });
     }
+    
 
-    // Get total bookings count
-    const { count: bookingsCount, error: bookingsError } = await supabase
+    // Get all bookings to calculate revenue and other stats
+    const { data: allBookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select('*', { count: 'exact', head: true });
+      .select('*');
 
-    if (bookingsError && bookingsError.code !== 'PGRST116') {
+    if (bookingsError) {
       return res.status(500).json({
         success: false,
-        message: 'Error fetching bookings count',
+        message: 'Error fetching bookings',
         error: bookingsError.message
       });
     }
+
+    // Get unique customers count
+    const uniqueCustomers = [...new Set(allBookings.map(booking => booking.guest_email))].length;
+
+    // Calculate total revenue from completed and confirmed bookings (payments received)
+    const totalRevenue = allBookings
+      .filter(booking => booking.status === 'completed' || booking.status === 'confirmed')
+      .reduce((sum, booking) => {
+        const price = parseFloat(booking.total_price);
+        return sum + (isNaN(price) ? 0 : price);
+      }, 0);
 
     // Get recent bookings (last 5)
     const { data: recentBookings, error: recentBookingsError } = await supabase
       .from('bookings')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(5);
 
     if (recentBookingsError) {
       return res.status(500).json({
@@ -52,13 +65,20 @@ router.get('/dashboard/stats', async (req, res) => {
         message: 'Error fetching recent bookings',
         error: recentBookingsError.message
       });
+      
     }
+    
+   
+ 
+    
 
     res.json({
       success: true,
       stats: {
         hotels: hotelsCount || 0,
-        bookings: bookingsCount || 0
+        bookings: allBookings.length || 0,
+        customers: uniqueCustomers,
+        revenue: totalRevenue
       },
       recentBookings: recentBookings || []
     });

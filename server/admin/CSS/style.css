@@ -464,3 +464,12 @@ div#modify-btn button{
   width: 156px !important;
   padding: 0 8px !important;
 }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}

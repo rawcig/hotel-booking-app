@@ -459,7 +459,7 @@ async function loadDashboardData() {
             // Update dashboard stats
             document.getElementById('totalCustomers').textContent = stats.customers || 0;
             document.getElementById('totalBookings').textContent = stats.bookings || 0;
-            document.getElementById('totalRevenue').textContent = `${(stats.bookings * 100 || 0).toLocaleString()}`; // Approximate revenue
+            document.getElementById('totalRevenue').textContent = stats.revenue || 0; // Approximate revenue
             document.getElementById('totalHotels').textContent = stats.hotels || 0;
         }
         
