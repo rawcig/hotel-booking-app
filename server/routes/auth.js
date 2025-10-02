@@ -143,7 +143,8 @@ router.post('/login', async (req, res) => {
     }
     
     // Find user by email
-    const { data: user, error: fetchError } = await supabase
+    const { data: user, error: fetchError } = 
+    await supabase
       .from('users')
       .select('*')
       .eq('email', email)
@@ -368,8 +369,13 @@ router.get('/', async (req, res) => {
       });
     }
     
-    // Get all users
-    const { data: users, error } = await supabase
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get users with pagination
+    const { data: users, error, count } = await supabase
       .from('users')
       .select(`
         id,
@@ -379,8 +385,9 @@ router.get('/', async (req, res) => {
         role_id,
         created_at,
         user_roles(name)
-      `)
-      .order('created_at', { ascending: false });
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching users:', error);
@@ -402,9 +409,21 @@ router.get('/', async (req, res) => {
       created_at: user.created_at
     }));
     
+    // Calculate pagination info
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    
     res.json({
       success: true,
-      users: formattedUsers
+      users: formattedUsers,
+      pagination: {
+        totalCount,
+        currentPage: page,
+        totalPages,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
     });
   } catch (error) {
     console.error('Error fetching all users:', error);

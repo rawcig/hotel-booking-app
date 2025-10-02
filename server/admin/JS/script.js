@@ -1729,14 +1729,17 @@ function closeAddUserModal() {
 
 function openEditUserModal(user) {
     const modal = document.getElementById('editUserModal');
+    console.log('Opening edit user modal with user:', user);
     if (modal && user) {
+        const userId = user.id || user; // Handle both object and ID cases
+        console.log('Setting user ID:', userId);
         // Populate form with user data
-        document.getElementById('editUserId').value = user.id;
-        document.getElementById('editUserName').value = user.name || '';
-        document.getElementById('editUserEmail').value = user.email || '';
-        document.getElementById('editUserPhone').value = user.phone || '';
-        document.getElementById('editUserRole').value = user.role || 'customer';
-        document.getElementById('editUserStatus').value = user.status || 'active';
+        document.getElementById('editUserId').value = userId;
+        document.getElementById('editUserName').value = user.name || user.Name || '';
+        document.getElementById('editUserEmail').value = user.email || user.Email || '';
+        document.getElementById('editUserPhone').value = user.phone || user.Phone || '';
+        document.getElementById('editUserRole').value = user.role || user.role_id || user.Role || 2;
+        document.getElementById('editUserStatus').value = user.status || user.Status || 'active';
         
         modal.style.display = 'flex';
         // Focus on the first input
@@ -1744,6 +1747,8 @@ function openEditUserModal(user) {
         if (firstInput) {
             setTimeout(() => firstInput.focus(), 100);
         }
+    } else {
+        console.error('Modal or user not found');
     }
 }
 
@@ -2323,17 +2328,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const formData = new FormData(this);
-            const userId = formData.get('editUserId');
-            const userData = {
-                name: formData.get('editUserName'),
-                email: formData.get('editUserEmail'),
-                phone: formData.get('editUserPhone') || '',
-                role: formData.get('editUserRole'),
-                status: formData.get('editUserStatus')
-            };
+            const userId = document.getElementById('editUserId').value; // Get from DOM instead of FormData
+            console.log('User ID being submitted:', userId);
+
+            //Get user's data from form
+            const userName = document.getElementById('editUserName').value;
+            const userEmail = document.getElementById('editUserEmail').value || '';
+            const userPhone = document.getElementById('editUserPhone').value || '';
+            const userRole = document.getElementById('editUserRole').value || 2;
+            const userStatus = document.getElementById('editUserStatus').value ;
+
+            let userData ={
+                name: userName,
+                email: userEmail,
+                phone: userPhone,
+                role: userRole,
+                status: userStatus
+            }
+
+            //Old get user's data
+            // const userData = {
+            //     name: formData.get('editUserName'),
+            //     email: formData.get('editUserEmail'),
+            //     phone: formData.get('editUserPhone') || '',
+            //     role: formData.get('editUserRole'),
+            //     status: formData.get('editUserStatus')
+            // };
             
             try {
-                const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                console.log('Making API call to:', `${API_BASE_URL}/users/${userId}`);
+                console.log('User data being sent:', userData);
+                const response = await fetch(`${API_BASE_URL}/users/${userId}`,{
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${currentUser?.token}`,

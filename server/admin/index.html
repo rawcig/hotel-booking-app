@@ -581,48 +581,64 @@
   </div>
 
   <!-- Edit User Modal -->
-  <div id="editUserModal" class="modal" style="display: none;" role="dialog" aria-labelledby="editUserModalTitle"
-    aria-modal="true" tabindex="-1">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="editUserModalTitle">Edit User</h2>
-        <button class="close" onclick="closeEditUserModal()" aria-label="Close edit user modal">&times;</button>
+  <div id="editUserModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-1000"
+    style="display: none;" role="dialog" aria-labelledby="editUserModalTitle" aria-modal="true" tabindex="-1">
+    <div
+      class="modal-content bg-white rounded-2xl w-11/12 max-w-2xl shadow-2xl flex flex-col transform transition-all duration-300 scale-95 opacity-0">
+
+      <div class="modal-header flex justify-between items-center p-6 border-b border-gray-200">
+        <h2 id="editUserModalTitle" class="text-xl font-bold text-gray-800">Edit User</h2>
+        <button class="close text-2xl text-gray-500 hover:text-gray-700" onclick="closeEditUserModal()"
+          aria-label="Close edit user modal">&times;</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body p-6 overflow-y-auto flex-1">
         <form id="editUserForm">
           <input type="hidden" id="editUserId">
-          <div class="form-group">
-            <label for="editUserName">Full Name:</label>
-            <input type="text" id="editUserName" class="form-control" required>
+          <div class="form-group mb-5">
+            <label for="editUserName" class="block text-gray-700 font-medium mb-2">Full Name:</label>
+            <input type="text" id="editUserName"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
           </div>
-          <div class="form-group">
-            <label for="editUserEmail">Email:</label>
-            <input type="email" id="editUserEmail" class="form-control" required>
+          <div class="form-group mb-5">
+            <label for="editUserEmail" class="block text-gray-700 font-medium mb-2">Email:</label>
+            <input type="email" id="editUserEmail"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
           </div>
-          <div class="form-group">
-            <label for="editUserPhone">Phone:</label>
-            <input type="tel" id="editUserPhone" class="form-control">
+          <div class="form-group mb-5">
+            <label for="editUserPhone" class="block text-gray-700 font-medium mb-2">Phone:</label>
+            <input type="tel" id="editUserPhone"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           </div>
-          <div class="form-group">
-            <label for="editUserRole">Role:</label>
-            <select id="editUserRole" class="form-control" required>
-              <option value="customer">Customer</option>
-              <option value="staff">Staff</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Administrator</option>
+          <div class="form-group mb-5">
+            <label for="editUserRole" class="block text-gray-700 font-medium mb-2">Role:</label>
+            <select id="editUserRole"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
+              <option value="2">User</option>
+              <option value="3">Staff</option>
+              <option value="4">Manager</option>
+              <option value="1">Administrator</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="editUserStatus">Status:</label>
-            <select id="editUserStatus" class="form-control" required>
+          <div class="form-group mb-6">
+            <label for="editUserStatus" class="block text-gray-700 font-medium mb-2">Status:</label>
+            <select id="editUserStatus"
+              class="form-control w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="suspended">Suspended</option>
             </select>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="closeEditUserModal()">Cancel</button>
-            <button type="submit" class="auth-btn">Update User</button>
+          <div class="form-actions flex justify-end gap-3">
+            <button type="button"
+              class="btn-secondary px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors duration-300"
+              onclick="closeEditUserModal()">Cancel</button>
+            <button type="submit"
+              class="auth-btn px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300">Update
+              User</button>
           </div>
         </form>
       </div>
@@ -1040,23 +1056,23 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script>
     // Initialize Lucide icons when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
       }
     });
-    
+
     // Also refresh icons after any DOM updates with a slight delay
-    const observer = new MutationObserver(function(mutations) {
+    const observer = new MutationObserver(function (mutations) {
       // Debounce the icon refresh to avoid too frequent updates
       clearTimeout(window.iconRefreshTimeout);
-      window.iconRefreshTimeout = setTimeout(function() {
+      window.iconRefreshTimeout = setTimeout(function () {
         if (typeof lucide !== 'undefined') {
           lucide.createIcons();
         }
       }, 100);
     });
-    
+
     // Observe changes to the whole document
     observer.observe(document.body, {
       childList: true,

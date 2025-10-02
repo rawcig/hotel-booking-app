@@ -116,11 +116,11 @@ export default function Profile() {
               name: profile.name || user.name || 'User',
               email: profile.email || user.email || '',
               phone: profile.phone || user.phone || '',
-              avatar: profile.avatar_url ? { uri: profile.avatar_url } : images.userMale,
+              avatar: profile.avatar_url ? { uri: profile.avatar_url } : images.avatar1,
               memberSince: new Date(profile.created_at).getFullYear().toString(),
-              totalBookings: '12', // We'll fetch this from bookings table later
-              favoriteHotels: '5',
-              loyaltyPoints: '2450',
+              totalBookings: '2', // We'll fetch this from bookings table later
+              favoriteHotels: '0',
+              loyaltyPoints: '0',
               bio: profile.bio || ''
             });
             
