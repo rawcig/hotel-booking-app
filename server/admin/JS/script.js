@@ -1911,7 +1911,7 @@ async function deleteBooking(bookingId) {
 async function loadReportsData() {
     try {
         // Load initial report data with weekly view
-        loadMockReportData('weekly');
+        loadRealReportData('weekly');
     } catch (error) {
         console.error('Error loading reports data:', error);
         showNotification('Error loading reports data', 'error');
@@ -2852,12 +2852,10 @@ function generateReport() {
     const dateRange = document.getElementById('reportDateRange').value;
     showNotification(`Generating ${dateRange} report...`, 'info');
     
-    // In a real implementation, this would fetch data from the backend
-    // For now, we'll simulate with mock data
-    loadMockReportData(dateRange);
+    loadRealReportData(dateRange);
 }
 
-async function loadMockReportData(dateRange) {
+async function loadRealReportData(dateRange) {
     try {
         // Show loading state
         const reportTableBody = document.getElementById('reportsTableBody');
@@ -2865,108 +2863,139 @@ async function loadMockReportData(dateRange) {
             reportTableBody.innerHTML = '<tr><td colspan="5" class="loading"><div class="spinner"></div>Loading report data...</td></tr>';
         }
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Generate mock report data based on date range
-        let mockData = [];
-        let revenue = 0;
-        let bookings = 0;
-        let cancellationRate = 0;
-        let customers = 0;
+        // Calculate date range for API request
+        const endDate = new Date();
+        let startDate = new Date();
         
         switch(dateRange) {
             case 'daily':
-                // Generate daily data for the last 7 days
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dayRevenue = Math.floor(Math.random() * 2000) + 500;
-                    const dayBookings = Math.floor(Math.random() * 20) + 5;
-                    const dayCustomers = Math.floor(Math.random() * 15) + 3;
-                    const dayCancellations = Math.floor(Math.random() * 3);
-                    const dayCancellationRate = dayBookings > 0 ? (dayCancellations / dayBookings * 100).toFixed(1) : 0;
-                    
-                    mockData.push({
-                        date: date.toLocaleDateString(),
-                        bookings: dayBookings,
-                        revenue: dayRevenue,
-                        avgBookingValue: (dayRevenue / dayBookings).toFixed(2),
-                        cancellationRate: dayCancellationRate
-                    });
-                    
-                    revenue += dayRevenue;
-                    bookings += dayBookings;
-                    customers += dayCustomers;
-                }
-                cancellationRate = bookings > 0 ? (mockData.reduce((sum, day) => sum + (day.cancellationRate * day.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                startDate.setDate(endDate.getDate() - 7);  // Last 7 days
                 break;
-                
             case 'weekly':
-                // Generate weekly data for the last 4 weeks
-                for (let i = 3; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (i * 7));
-                    const weekRevenue = Math.floor(Math.random() * 10000) + 3000;
-                    const weekBookings = Math.floor(Math.random() * 100) + 25;
-                    const weekCustomers = Math.floor(Math.random() * 70) + 15;
-                    const weekCancellations = Math.floor(Math.random() * 10);
-                    const weekCancellationRate = weekBookings > 0 ? (weekCancellations / weekBookings * 100).toFixed(1) : 0;
-                    
-                    mockData.push({
-                        date: `Week of ${date.toLocaleDateString()}`,
-                        bookings: weekBookings,
-                        revenue: weekRevenue,
-                        avgBookingValue: (weekRevenue / weekBookings).toFixed(2),
-                        cancellationRate: weekCancellationRate
-                    });
-                    
-                    revenue += weekRevenue;
-                    bookings += weekBookings;
-                    customers += weekCustomers;
-                }
-                cancellationRate = bookings > 0 ? (mockData.reduce((sum, week) => sum + (week.cancellationRate * week.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                startDate.setDate(endDate.getDate() - 28); // Last 4 weeks (28 days)
                 break;
-                
             case 'monthly':
-                // Generate monthly data for the last 3 months
-                for (let i = 2; i >= 0; i--) {
-                    const date = new Date();
-                    date.setMonth(date.getMonth() - i);
-                    const monthRevenue = Math.floor(Math.random() * 30000) + 10000;
-                    const monthBookings = Math.floor(Math.random() * 300) + 75;
-                    const monthCustomers = Math.floor(Math.random() * 200) + 50;
-                    const monthCancellations = Math.floor(Math.random() * 20);
-                    const monthCancellationRate = monthBookings > 0 ? (monthCancellations / monthBookings * 100).toFixed(1) : 0;
-                    
-                    mockData.push({
-                        date: date.toLocaleDateString('default', { month: 'long', year: 'numeric' }),
-                        bookings: monthBookings,
-                        revenue: monthRevenue,
-                        avgBookingValue: (monthRevenue / monthBookings).toFixed(2),
-                        cancellationRate: monthCancellationRate
-                    });
-                    
-                    revenue += monthRevenue;
-                    bookings += monthBookings;
-                    customers += monthCustomers;
-                }
-                cancellationRate = bookings > 0 ? (mockData.reduce((sum, month) => sum + (month.cancellationRate * month.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                startDate.setMonth(endDate.getMonth() - 3); // Last 3 months
                 break;
         }
         
+        // Format dates for API
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        // Fetch data from multiple API endpoints
+        const [revenueResponse, bookingStatsResponse, bookingsResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/reports/revenue?startDate=${startDateStr}&endDate=${endDateStr}&groupBy=${dateRange === 'daily' ? 'day' : dateRange === 'weekly' ? 'week' : 'month'}`, {
+                headers: {
+                    'Authorization': `Bearer ${currentUser.token}`
+                }
+            }),
+            fetch(`${API_BASE_URL}/admin/bookings/stats`, {
+                headers: {
+                    'Authorization': `Bearer ${currentUser.token}`
+                }
+            }),
+            fetch(`${API_BASE_URL}/reports/bookings?startDate=${startDateStr}&endDate=${endDateStr}`, {
+                headers: {
+                    'Authorization': `Bearer ${currentUser.token}`
+                }
+            })
+        ]);
+        
+        if (!revenueResponse.ok) {
+            throw new Error(`Revenue data error: ${revenueResponse.status}`);
+        }
+        
+        if (!bookingStatsResponse.ok) {
+            throw new Error(`Booking stats error: ${bookingStatsResponse.status}`);
+        }
+        
+        if (!bookingsResponse.ok) {
+            throw new Error(`Bookings data error: ${bookingsResponse.status}`);
+        }
+        
+        const revenueData = await revenueResponse.json();
+        const bookingStats = await bookingStatsResponse.json();
+        const bookingsData = await bookingsResponse.json();
+        
+        // Calculate additional statistics
+        const totalBookings = bookingsData.bookings ? bookingsData.bookings.length : 0;
+        const totalRevenue = revenueData.revenue ? revenueData.revenue.total : 0;
+        
+        // Get booking statistics from the dedicated endpoint
+        let bookingStatsData = null;
+        if (bookingStats.success && bookingStats.stats) {
+            bookingStatsData = bookingStats.stats;
+        }
+        
+        const cancelledBookings = bookingStatsData ? bookingStatsData.cancelled : 
+                                 (bookingsData.bookings ? bookingsData.bookings.filter(booking => booking.status === 'cancelled').length : 0);
+        
+        const cancellationRate = totalBookings > 0 ? (cancelledBookings / totalBookings * 100).toFixed(1) : 0;
+        
+        // Get unique customers from bookings
+        const uniqueCustomers = new Set(bookingsData.bookings ? bookingsData.bookings.map(booking => booking.guest_email || booking.email || booking.guest_name).filter(email => email) : []).size;
+        
         // Update dashboard stats
-        document.getElementById('reportsTotalRevenue').textContent = `${revenue.toFixed(2)}`;
-        document.getElementById('reportsTotalBookings').textContent = bookings;
-        document.getElementById('reportsTotalCustomers').textContent = customers;
+        document.getElementById('reportsTotalRevenue').textContent = `${totalRevenue.toFixed(2)}`;
+        document.getElementById('reportsTotalBookings').textContent = totalBookings;
+        document.getElementById('reportsTotalCustomers').textContent = uniqueCustomers;
         document.getElementById('reportsCancellationRate').textContent = `${cancellationRate}%`;
         
+        // Prepare chart data - match revenue periods with booking counts
+        const chartData = revenueData.revenue.chartData.map(item => {
+            // Count bookings that fall within this period
+            let periodBookings = 0;
+            let periodCancelledBookings = 0;
+            
+            if (bookingsData.bookings) {
+                bookingsData.bookings.forEach(booking => {
+                    const bookingDate = new Date(booking.created_at);
+                    let periodMatch = false;
+                    
+                    // Match based on the period format from revenue endpoint
+                    if (dateRange === 'day') {
+                        // Format: YYYY-MM-DD
+                        const bookingDay = bookingDate.toISOString().split('T')[0];
+                        periodMatch = item.period === bookingDay;
+                    } else if (dateRange === 'week') {
+                        // Format: YYYY-W## (approximated)
+                        const week = Math.ceil(bookingDate.getDate() / 7);
+                        const bookingWeek = `${bookingDate.getFullYear()}-W${week}`;
+                        periodMatch = item.period === bookingWeek;
+                    } else { // monthly
+                        // Format: YYYY-MM
+                        const bookingMonth = `${bookingDate.getFullYear()}-${String(bookingDate.getMonth() + 1).padStart(2, '0')}`;
+                        periodMatch = item.period === bookingMonth;
+                    }
+                    
+                    if (periodMatch) {
+                        periodBookings++;
+                        if (booking.status === 'cancelled') {
+                            periodCancelledBookings++;
+                        }
+                    }
+                });
+            }
+            
+            const avgBookingValue = periodBookings > 0 ? (item.amount / periodBookings).toFixed(2) : '0.00';
+            const periodCancellationRate = periodBookings > 0 ? (periodCancelledBookings / periodBookings * 100).toFixed(1) : '0.0';
+            
+            return {
+                date: item.period,
+                bookings: periodBookings,
+                revenue: item.amount,
+                avgBookingValue: avgBookingValue,
+                cancellationRate: periodCancellationRate
+            };
+        });
+        
         // Render table data
-        renderReportTable(mockData);
+        renderReportTable(chartData);
         
         // Create charts
-        createRevenueChart(mockData);
-        createBookingTypeChart(mockData);
+        createRevenueChart(chartData);
+        createBookingTypeChart(bookingsData.bookings || []);
         
         showNotification('Report generated successfully', 'success');
     } catch (error) {
@@ -3038,7 +3067,7 @@ function createRevenueChart(data) {
     });
 }
 
-function createBookingTypeChart(data) {
+function createBookingTypeChart(bookings) {
     const ctx = document.getElementById('bookingTypeChart');
     if (!ctx) return;
     
@@ -3047,15 +3076,49 @@ function createBookingTypeChart(data) {
         window.bookingTypeChart.destroy();
     }
     
-    // Group data by booking status (using common booking statuses)
-    const bookingStatuses = ['Confirmed', 'Pending', 'Cancelled', 'Checked In', 'Checked Out'];
-    const bookingStatusData = [
-        Math.floor(Math.random() * 100) + 30,  // Confirmed
-        Math.floor(Math.random() * 30) + 10,   // Pending
-        Math.floor(Math.random() * 20) + 5,    // Cancelled
-        Math.floor(Math.random() * 25) + 8,    // Checked In
-        Math.floor(Math.random() * 80) + 20    // Checked Out
-    ];
+    // Count bookings by status
+    const statusCounts = {};
+    bookings.forEach(booking => {
+        const status = booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : 'Unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    // Define all possible statuses and their colors
+    const allStatuses = ['Confirmed', 'Pending', 'Cancelled', 'Completed', 'Checked In', 'Checked Out'];
+    const statusColors = {
+        'Confirmed': 'rgba(75, 192, 192, 0.6)',    // teal
+        'Pending': 'rgba(255, 205, 86, 0.6)',     // yellow
+        'Cancelled': 'rgba(255, 99, 132, 0.6)',   // red
+        'Completed': 'rgba(153, 102, 255, 0.6)',  // purple
+        'Checked In': 'rgba(54, 162, 235, 0.6)',  // blue
+        'Checked Out': 'rgba(255, 159, 64, 0.6)', // orange
+        'Unknown': 'rgba(201, 203, 207, 0.6)'     // gray
+    };
+    
+    // Prepare data arrays for chart
+    const bookingStatuses = [];
+    const bookingStatusData = [];
+    const backgroundColors = [];
+    const borderColors = [];
+    
+    allStatuses.forEach(status => {
+        if (statusCounts[status] > 0) {
+            bookingStatuses.push(status);
+            bookingStatusData.push(statusCounts[status]);
+            backgroundColors.push(statusColors[status]);
+            borderColors.push(statusColors[status].replace('0.6', '1'));
+        }
+    });
+    
+    // Add any other status not in the predefined list
+    Object.keys(statusCounts).forEach(status => {
+        if (!allStatuses.includes(status) && status !== 'Unknown') {
+            bookingStatuses.push(status);
+            bookingStatusData.push(statusCounts[status]);
+            backgroundColors.push(statusColors[status] || 'rgba(201, 203, 207, 0.6)');
+            borderColors.push((statusColors[status] || 'rgba(201, 203, 207, 0.6)').replace('0.6', '1'));
+        }
+    });
     
     window.bookingTypeChart = new Chart(ctx, {
         type: 'doughnut',
@@ -3064,20 +3127,8 @@ function createBookingTypeChart(data) {
             datasets: [{
                 label: 'Bookings by Status',
                 data: bookingStatusData,
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.6)',    // Confirmed - teal
-                    'rgba(255, 205, 86, 0.6)',    // Pending - yellow
-                    'rgba(255, 99, 132, 0.6)',    // Cancelled - red
-                    'rgba(54, 162, 235, 0.6)',    // Checked In - blue
-                    'rgba(153, 102, 255, 0.6)'    // Checked Out - purple
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(255, 205, 86, 1)',
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(153, 102, 255, 1)'
-                ],
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
                 borderWidth: 1
             }]
         },
