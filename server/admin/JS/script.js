@@ -426,6 +426,9 @@ function handleNavigation(e) {
             case 'bookings':
                 loadBookingsData();
                 break;
+            case 'reports':
+                loadReportsData();
+                break;
             
             default:
                 break;
@@ -1905,6 +1908,16 @@ async function deleteBooking(bookingId) {
     }
 }
 
+async function loadReportsData() {
+    try {
+        // Load initial report data with weekly view
+        loadMockReportData('weekly');
+    } catch (error) {
+        console.error('Error loading reports data:', error);
+        showNotification('Error loading reports data', 'error');
+    }
+}
+
 // Booking Modal Functions
 function openAddBookingModal() {
     const modal = document.getElementById('addBookingModal');
@@ -2834,11 +2847,253 @@ function exportBookingData() {
     showNotification('Booking data export functionality would be implemented here', 'info');
 }
 
-// Helper function to refresh Lucide icons
-function refreshIcons() {
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+// Reports functionality
+function generateReport() {
+    const dateRange = document.getElementById('reportDateRange').value;
+    showNotification(`Generating ${dateRange} report...`, 'info');
+    
+    // In a real implementation, this would fetch data from the backend
+    // For now, we'll simulate with mock data
+    loadMockReportData(dateRange);
+}
+
+async function loadMockReportData(dateRange) {
+    try {
+        // Show loading state
+        const reportTableBody = document.getElementById('reportsTableBody');
+        if (reportTableBody) {
+            reportTableBody.innerHTML = '<tr><td colspan="5" class="loading"><div class="spinner"></div>Loading report data...</td></tr>';
+        }
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Generate mock report data based on date range
+        let mockData = [];
+        let revenue = 0;
+        let bookings = 0;
+        let cancellationRate = 0;
+        let customers = 0;
+        
+        switch(dateRange) {
+            case 'daily':
+                // Generate daily data for the last 7 days
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dayRevenue = Math.floor(Math.random() * 2000) + 500;
+                    const dayBookings = Math.floor(Math.random() * 20) + 5;
+                    const dayCustomers = Math.floor(Math.random() * 15) + 3;
+                    const dayCancellations = Math.floor(Math.random() * 3);
+                    const dayCancellationRate = dayBookings > 0 ? (dayCancellations / dayBookings * 100).toFixed(1) : 0;
+                    
+                    mockData.push({
+                        date: date.toLocaleDateString(),
+                        bookings: dayBookings,
+                        revenue: dayRevenue,
+                        avgBookingValue: (dayRevenue / dayBookings).toFixed(2),
+                        cancellationRate: dayCancellationRate
+                    });
+                    
+                    revenue += dayRevenue;
+                    bookings += dayBookings;
+                    customers += dayCustomers;
+                }
+                cancellationRate = bookings > 0 ? (mockData.reduce((sum, day) => sum + (day.cancellationRate * day.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                break;
+                
+            case 'weekly':
+                // Generate weekly data for the last 4 weeks
+                for (let i = 3; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (i * 7));
+                    const weekRevenue = Math.floor(Math.random() * 10000) + 3000;
+                    const weekBookings = Math.floor(Math.random() * 100) + 25;
+                    const weekCustomers = Math.floor(Math.random() * 70) + 15;
+                    const weekCancellations = Math.floor(Math.random() * 10);
+                    const weekCancellationRate = weekBookings > 0 ? (weekCancellations / weekBookings * 100).toFixed(1) : 0;
+                    
+                    mockData.push({
+                        date: `Week of ${date.toLocaleDateString()}`,
+                        bookings: weekBookings,
+                        revenue: weekRevenue,
+                        avgBookingValue: (weekRevenue / weekBookings).toFixed(2),
+                        cancellationRate: weekCancellationRate
+                    });
+                    
+                    revenue += weekRevenue;
+                    bookings += weekBookings;
+                    customers += weekCustomers;
+                }
+                cancellationRate = bookings > 0 ? (mockData.reduce((sum, week) => sum + (week.cancellationRate * week.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                break;
+                
+            case 'monthly':
+                // Generate monthly data for the last 3 months
+                for (let i = 2; i >= 0; i--) {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    const monthRevenue = Math.floor(Math.random() * 30000) + 10000;
+                    const monthBookings = Math.floor(Math.random() * 300) + 75;
+                    const monthCustomers = Math.floor(Math.random() * 200) + 50;
+                    const monthCancellations = Math.floor(Math.random() * 20);
+                    const monthCancellationRate = monthBookings > 0 ? (monthCancellations / monthBookings * 100).toFixed(1) : 0;
+                    
+                    mockData.push({
+                        date: date.toLocaleDateString('default', { month: 'long', year: 'numeric' }),
+                        bookings: monthBookings,
+                        revenue: monthRevenue,
+                        avgBookingValue: (monthRevenue / monthBookings).toFixed(2),
+                        cancellationRate: monthCancellationRate
+                    });
+                    
+                    revenue += monthRevenue;
+                    bookings += monthBookings;
+                    customers += monthCustomers;
+                }
+                cancellationRate = bookings > 0 ? (mockData.reduce((sum, month) => sum + (month.cancellationRate * month.bookings / 100), 0) / bookings * 100).toFixed(1) : 0;
+                break;
+        }
+        
+        // Update dashboard stats
+        document.getElementById('reportsTotalRevenue').textContent = `${revenue.toFixed(2)}`;
+        document.getElementById('reportsTotalBookings').textContent = bookings;
+        document.getElementById('reportsTotalCustomers').textContent = customers;
+        document.getElementById('reportsCancellationRate').textContent = `${cancellationRate}%`;
+        
+        // Render table data
+        renderReportTable(mockData);
+        
+        // Create charts
+        createRevenueChart(mockData);
+        createBookingTypeChart(mockData);
+        
+        showNotification('Report generated successfully', 'success');
+    } catch (error) {
+        console.error('Error loading report data:', error);
+        showNotification('Error loading report data', 'error');
     }
+}
+
+function renderReportTable(data) {
+    const tableBody = document.getElementById('reportsTableBody');
+    if (!tableBody) return;
+    
+    if (data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-left p-4">No report data found</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="text-left p-4 border-b">${row.date}</td>
+            <td class="text-left p-4 border-b">${row.bookings}</td>
+            <td class="text-left p-4 border-b">${row.revenue.toFixed(2)}</td>
+            <td class="text-left p-4 border-b">${row.avgBookingValue}</td>
+            <td class="text-left p-4 border-b">${row.cancellationRate}%</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+function createRevenueChart(data) {
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists and is a Chart.js instance
+    if (window.revenueChart && typeof window.revenueChart.destroy === 'function') {
+        window.revenueChart.destroy();
+    }
+    
+    const labels = data.map(item => item.date);
+    const revenueData = data.map(item => item.revenue);
+    
+    window.revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue',
+                data: revenueData,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenue Trend'
+                }
+            }
+        }
+    });
+}
+
+function createBookingTypeChart(data) {
+    const ctx = document.getElementById('bookingTypeChart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists and is a Chart.js instance
+    if (window.bookingTypeChart && typeof window.bookingTypeChart.destroy === 'function') {
+        window.bookingTypeChart.destroy();
+    }
+    
+    // Group data by booking status (using common booking statuses)
+    const bookingStatuses = ['Confirmed', 'Pending', 'Cancelled', 'Checked In', 'Checked Out'];
+    const bookingStatusData = [
+        Math.floor(Math.random() * 100) + 30,  // Confirmed
+        Math.floor(Math.random() * 30) + 10,   // Pending
+        Math.floor(Math.random() * 20) + 5,    // Cancelled
+        Math.floor(Math.random() * 25) + 8,    // Checked In
+        Math.floor(Math.random() * 80) + 20    // Checked Out
+    ];
+    
+    window.bookingTypeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: bookingStatuses,
+            datasets: [{
+                label: 'Bookings by Status',
+                data: bookingStatusData,
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',    // Confirmed - teal
+                    'rgba(255, 205, 86, 0.6)',    // Pending - yellow
+                    'rgba(255, 99, 132, 0.6)',    // Cancelled - red
+                    'rgba(54, 162, 235, 0.6)',    // Checked In - blue
+                    'rgba(153, 102, 255, 0.6)'    // Checked Out - purple
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 205, 86, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Bookings by Status'
+                }
+            }
+        }
+    });
 }
 
 window.HotelApp = {

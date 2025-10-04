@@ -122,7 +122,14 @@ body {
   display: flex;         /* enable flexbox */
   flex-direction: column;
   align-items: center;   /* center canvas horizontally */
-  margin: auto;          /* center the container itself if needed */
+  margin: auto;   
+  margin-top:  0 !important;       /* center the container itself if needed */
+}
+
+.chart-container h3 {
+  align-self: flex-start; /* Align title to the left instead of center */
+  margin-bottom: 1rem;    /* Add some space between title and chart */
+  width: 100%;           /* Make title span full width */
 }
 
 .chart-container canvas {
@@ -131,10 +138,14 @@ body {
   display: block;           /* removes inline spacing */
 }
 
-.chart-container #paymentMethodsChart {
+.chart-container #revenueChart {
   max-height: 400px;
-  max-width: 400px;    /* cap width */
-  margin: auto;        /* center inside container */
+}
+
+.chart-container #bookingTypeChart {
+  max-height: 300px;       /* Smaller height for pie chart */
+  max-width: 300px;        /* Smaller width for pie chart */
+  margin: auto;            /* center inside container */
 }
 
 .reportsContent .content-section,
@@ -148,6 +159,13 @@ body {
   max-width: 600px; /* limit max size */
   width: 100%;      /* responsive */
   height: 400px;    /* fixed height if needed */
+}
+
+/* Filter controls for reports */
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 
